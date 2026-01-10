@@ -102,7 +102,7 @@ class GalleryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withAlpha(10), // 0.04 opacity
             blurRadius: 20,
             offset: const Offset(0, 8),
           )
@@ -151,7 +151,8 @@ class GalleryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPolaroidImage(Map<String, String> imageData) {
+  Widget _buildPolaroidImage(Map<String, dynamic> imageData) {
+    final description = imageData['description'] as String?;
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 14),
@@ -173,20 +174,36 @@ class GalleryScreen extends StatelessWidget {
           ),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(17)),
             ),
-            child: Center(
-              child: Text(
-                imageData['date']!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+            child: Column(
+              children: [
+                Text(
+                  imageData['date']!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                if (description != null && description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      description,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -196,8 +213,11 @@ class GalleryScreen extends StatelessWidget {
 
   Widget _getEggEmoji(Goal goal) {
     String emoji = "🥚";
-    if (goal.status == EggStatus.chicken) emoji = "🐔";
-    else if (goal.status == EggStatus.chick) emoji = "🐥";
+    if (goal.status == EggStatus.chicken) {
+      emoji = "🐔";
+    } else if (goal.status == EggStatus.chick) {
+      emoji = "🐣";
+    }
     return Text(emoji, style: const TextStyle(fontSize: 28));
   }
 }

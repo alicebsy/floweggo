@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/goal_model.dart';
+import 'image_check_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   // main.dart에서 데이터를 넘겨받습니다.
@@ -69,9 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4).withOpacity(0.3),
+        color: const Color(0xFFFFF9C4).withAlpha(77), // 0.3 opacity
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFF176).withOpacity(0.5)),
+        border: Border.all(color: const Color(0xFFFFF176).withAlpha(128)), // 0.5 opacity
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +127,22 @@ class _HomeScreenState extends State<HomeScreen> {
   // 2. 인증 로직 (사진을 찍으면 갤러리용 데이터로 저장)
   Future<void> _pickImage(Goal goal, ImageSource source) async {
     final XFile? photo = await _picker.pickImage(source: source, imageQuality: 50);
-    if (photo != null) {
+    if (photo == null) return;
+
+    // 위젯이 마운트되지 않은 경우 BuildContext를 사용하지 않도록 확인합니다.
+    if (!mounted) return;
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageCheckScreen(
+          imagePath: photo.path,
+          goal: goal, // goal 객체 전달
+        ),
+      ),
+    );
+
+    if (result != null) { // result는 설명 문자열이거나 빈 문자열일 수 있습니다.
       setState(() {
         // 날짜 생성
         String formattedDate = "${DateTime.now().month}월 ${DateTime.now().day}일";
@@ -135,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
         goal.authImages.add({
           'path': photo.path,
           'date': formattedDate,
+          'description': result,
         });
 
         if (goal.currentDays < goal.totalDays) {
@@ -238,13 +255,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGoalCard(Goal goal) {
     String emoji = "🥚";
-    if (goal.status == EggStatus.chicken) emoji = "🐔";
-    else if (goal.status == EggStatus.chick) emoji = "🐣";
+    if (goal.status == EggStatus.chicken) {
+      emoji = "🐔";
+    } else if (goal.status == EggStatus.chick) {
+      emoji = "🐣";
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 20)]), // 0.05 opacity
       child: Column(
         children: [
           Row(

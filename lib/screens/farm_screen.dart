@@ -40,7 +40,7 @@ class FarmScreen extends StatelessWidget {
   Widget _buildBadge(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: Colors.white.withAlpha(77), borderRadius: BorderRadius.circular(20)),
       child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
     );
   }

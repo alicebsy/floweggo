@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 // 1. EggStatus enum을 클래스 외부(상단)에 정의해야 합니다.
 enum EggStatus { egg, chick, chicken, fried }
 
@@ -9,8 +7,8 @@ class Goal {
   final int totalDays;
   int currentDays;
   EggStatus status;
-  // 사진 경로와 날짜를 담는 리스트
-  List<Map<String, String>> authImages;
+  // 사진 경로, 날짜, 설명을 담는 리스트
+  List<Map<String, dynamic>> authImages;
 
   Goal({
     required this.id,
@@ -18,8 +16,8 @@ class Goal {
     required this.totalDays,
     this.currentDays = 0,
     this.status = EggStatus.egg,
-    List<Map<String, String>>? authImages, // 생성자 파라미터 이름 수정
-  }) : authImages = authImages ?? []; // this. 제거하여 불필요한 한정자 경고 해결
+    List<Map<String, dynamic>>? authImages,
+  }) : authImages = authImages ?? [];
 
   double get progress => totalDays == 0 ? 0 : currentDays / totalDays;
 

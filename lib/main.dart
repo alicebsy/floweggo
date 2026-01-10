@@ -56,7 +56,7 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     // 탭별 페이지 구성 (데이터와 업데이트 함수 전달)
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       GalleryScreen(goals: goalList),
       HomeScreen(goals: goalList, onUpdate: _updateData),
       const FarmScreen(),
@@ -66,11 +66,11 @@ class _RootScreenState extends State<RootScreen> {
       // IndexedStack은 자식 위젯들의 상태(스크롤, 입력 데이터 등)를 메모리에 유지합니다.
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5)),
+          border: Border(top: BorderSide(color: Colors.grey.withAlpha(51), width: 0.5)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
