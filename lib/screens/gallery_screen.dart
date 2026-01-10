@@ -1,203 +1,220 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:flutter/material.dart';
+import '../database/db_helper.dart';
 import '../models/goal_model.dart';
 
-class GalleryScreen extends StatelessWidget {
-  final List<Goal> goals;
+class GalleryScreen extends StatefulWidget {
+  const GalleryScreen({super.key});
 
-  const GalleryScreen({super.key, required this.goals});
+  @override
+  State<GalleryScreen> createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends State<GalleryScreen> {
+  final db = DbHelper();
+
+  // 검색어 입력을 제어하는 컨트롤러
+  final TextEditingController _searchController = TextEditingController();
+
+  // 현재 입력된 검색어를 저장하는 변수
+  String _searchText = "";
+
+  @override
+  void initState() {
+    super.initState();
+    // 검색창에 글자가 입력될 때마다 화면을 새로고침하여 결과를 갱신합니다.
+    _searchController.addListener(() {
+      setState(() {
+        _searchText = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // 화면이 꺼질 때 컨트롤러를 정리합니다 (메모리 누수 방지).
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // 화면을 강제로 다시 그리는 함수 (새로고침 버튼용)
+  void _refresh() {
+    setState(() {});
+  }
+
+  // 🔍 검색창 위젯 (디자인)
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9), // 약간 투명한 흰색 배경
+        borderRadius: BorderRadius.circular(30), // 둥근 모서리
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))], // 그림자
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: const InputDecoration(
+          hintText: "어떤 알을 찾고 있나요?", // 안내 문구
+          border: InputBorder.none, // 테두리 없앰
+          icon: Icon(Icons.search, color: Colors.brown), // 돋보기 아이콘
+          hintStyle: TextStyle(color: Colors.grey),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 인증샷이 있는 목표들만 필터링
-    final goalsWithImages = goals.where((g) => g.authImages.isNotEmpty).toList();
+    // 1. 데이터베이스에서 모든 목표(알) 리스트를 가져옵니다.
+    final allGoals = db.allGoals;
+
+    // 2. 검색어가 포함된 목표만 골라냅니다 (필터링).
+    final filteredGoals = allGoals.where((goal) {
+      // 검색어가 비어있으면 모든 알을 보여주고, 있으면 이름에 포함된 것만 보여줍니다.
+      return goal.name.contains(_searchText);
+    }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7), // 아이폰 배경색
-      body: Column(
+      body: Stack(
         children: [
-          // 1. 고정형 헤더: '나의 농장'과 높이/패딩 완벽 통일
-          _buildHeader(),
+          // 배경 이미지 설정
+          SizedBox.expand(child: Image.asset('assets/images/sum2.png', fit: BoxFit.cover)),
 
-          // 2. 하단 리스트 영역
-          Expanded(
-            child: goalsWithImages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-              padding: const EdgeInsets.only(top: 10, bottom: 30),
-              itemCount: goalsWithImages.length,
-              itemBuilder: (context, index) => _buildGoalGalleryCard(goalsWithImages[index]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          // 배경을 약간 어둡게 처리 (글씨가 잘 보이도록)
+          Container(color: Colors.black.withOpacity(0.3)),
 
-  // 상단 헤더 규격 통일 (높이 200, 상단 패딩 60)
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      height: 200, // 규격 통일
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFCC00FF), // 보라
-            Color(0xFFFF00CC), // 핑크
-          ],
-        ),
-      ),
-      padding: const EdgeInsets.only(top: 60, left: 25), // 여백 통일
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "📸 갤러리",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -1.0,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "나의 노력을 한눈에 확인하세요",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          SafeArea(
+            child: Column(
+              children: [
+                // 🔥🔥 [위치 재조정] 여백을 80 -> 130으로 더 늘려서 확실히 내렸습니다.
+                const SizedBox(height: 100),
 
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("📸", style: TextStyle(fontSize: 50)),
-          SizedBox(height: 16),
-          Text(
-            "아직 인증샷이 없어요\n홈에서 첫 인증을 완료해보세요!",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
+                // 검색창 표시
+                _buildSearchBar(),
 
-  Widget _buildGoalGalleryCard(Goal goal) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _getEggEmoji(goal),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  goal.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.8,
+                const SizedBox(height: 10),
+
+                // 우측 상단 새로고침 버튼
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      onPressed: _refresh,
+                      tooltip: "새로고침",
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(12),
+
+                // 리스트 보여주는 부분
+                Expanded(
+                  child: filteredGoals.isEmpty
+                      ? _buildEmptyView() // 검색 결과가 없으면 안내 문구 표시
+                      : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    itemCount: filteredGoals.length,
+                    itemBuilder: (context, index) {
+                      final goal = filteredGoals[index];
+                      return _buildGoalAlbumCard(goal); // 각 알의 카드 위젯
+                    },
+                  ),
                 ),
-                child: Text(
-                  "${goal.authImages.length}개",
-                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold),
-                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 데이터가 없을 때 보여줄 화면
+  Widget _buildEmptyView() {
+    // 검색 중일 때와, 아예 데이터가 없을 때 문구를 다르게 보여줍니다.
+    String message = _searchText.isNotEmpty
+        ? "검색된 알이 없닭! 🧐"
+        : "아직 입양한 알이 없닭!\n인큐베이터에서 알을 입양해주세요.";
+
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  // 각 알(목표) 정보를 보여주는 카드 위젯
+  Widget _buildGoalAlbumCard(Goal goal) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 25), // 카드 간 간격
+      padding: const EdgeInsets.all(15), // 내부 여백
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1).withOpacity(0.95), // 연한 노란색 배경
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 상단: 이모지, 이름, 사진 개수
+          Row(
+            children: [
+              Text(goal.emoji, style: const TextStyle(fontSize: 30)),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(goal.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5D4037))),
+                  Text("${goal.memories.length}개의 인증샷", style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: goal.authImages.reversed.map((img) => _buildPolaroidImage(img)).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          const Divider(color: Colors.brown, thickness: 1, height: 20), // 구분선
 
-  Widget _buildPolaroidImage(Map<String, String> imageData) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E5EA), width: 0.5),
-      ),
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
-            child: Image.file(
-              File(imageData['path']!),
-              width: 140,
-              height: 110,
-              fit: BoxFit.cover,
+          // 하단: 사진 그리드 (사진이 없으면 안내 문구)
+          goal.memories.isEmpty
+              ? Container(
+            height: 100,
+            alignment: Alignment.center,
+            child: const Text("아직 기록된 사진이 없어요.\n온도를 높여 인증샷을 남겨보세요!", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+          )
+              : GridView.builder(
+            shrinkWrap: true, // 리스트 안에 리스트가 들어갈 때 필수
+            physics: const NeverScrollableScrollPhysics(), // 스크롤 방지 (전체 스크롤 사용)
+            itemCount: goal.memories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3, // 한 줄에 3개씩
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1, // 정사각형
             ),
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(17)),
-            ),
-            child: Center(
-              child: Text(
-                imageData['date']!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+            itemBuilder: (context, imgIndex) {
+              final memory = goal.memories[imgIndex];
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(10), // 사진 둥글게
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // 저장된 사진 파일 불러오기
+                    Image.file(File(memory['imagePath']!), fit: BoxFit.cover),
+                    // 사진 아래 날짜 표시줄
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        color: Colors.black54, // 반투명 검은 배경
+                        child: Text(memory['date']!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
     );
-  }
-
-  Widget _getEggEmoji(Goal goal) {
-    String emoji = "🥚";
-    if (goal.status == EggStatus.chicken) emoji = "🐔";
-    else if (goal.status == EggStatus.chick) emoji = "🐥";
-    return Text(emoji, style: const TextStyle(fontSize: 28));
   }
 }

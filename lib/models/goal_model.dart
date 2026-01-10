@@ -1,36 +1,41 @@
-import 'package:flutter/material.dart';
-
-// 1. EggStatus enum을 클래스 외부(상단)에 정의해야 합니다.
-enum EggStatus { egg, chick, chicken, fried }
+enum GoalStatus { egg, chick, chicken, fried }
 
 class Goal {
-  final String id;
-  final String title;
-  final int totalDays;
+  String id;
+  String name;
+  int period;
   int currentDays;
-  EggStatus status;
-  // 사진 경로와 날짜를 담는 리스트
-  List<Map<String, String>> authImages;
+  double temperature;
+  String frequency;
+
+  // 🔥 추가된 부분: 이 목표에 속한 사진 기록들 (경로와 날짜 저장)
+  List<Map<String, String>> memories;
 
   Goal({
     required this.id,
-    required this.title,
-    required this.totalDays,
+    required this.name,
+    required this.period,
     this.currentDays = 0,
-    this.status = EggStatus.egg,
-    List<Map<String, String>>? authImages, // 생성자 파라미터 이름 수정
-  }) : authImages = authImages ?? []; // this. 제거하여 불필요한 한정자 경고 해결
+    this.temperature = 0.0,
+    required this.frequency,
+    this.memories = const [], // 기본값은 빈 리스트
+  });
 
-  double get progress => totalDays == 0 ? 0 : currentDays / totalDays;
+  double get progress => currentDays / period;
 
-  // 2. if 문에 중괄호 {}를 추가하여 권장 코딩 스타일 적용 및 에러 해결
-  void updateStatus() {
-    if (progress >= 1.0) {
-      status = EggStatus.chicken;
-    } else if (progress >= 0.5) {
-      status = EggStatus.chick;
-    } else {
-      status = EggStatus.egg;
+  GoalStatus get status {
+    if (progress >= 1.0) return GoalStatus.chicken;
+    if (progress >= 0.5) return GoalStatus.chick;
+    if (progress < 0.5 && currentDays >= 0) return GoalStatus.egg;
+    return GoalStatus.fried;
+  }
+
+  String get emoji {
+    switch (status) {
+      case GoalStatus.chicken: return "🐓";
+      case GoalStatus.chick: return "🐣";
+      case GoalStatus.egg: return "🥚";
+      case GoalStatus.fried: return "🍳";
     }
   }
 }
