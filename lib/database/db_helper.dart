@@ -12,6 +12,25 @@ class DbHelper {
 
   void addGoal(Goal goal) => activeGoals.add(goal);
 
+  // 파라미터에 description 추가
+  void recordProgress(int index, String path, String description) {
+    if (index >= activeGoals.length) return;
+    final goal = activeGoals[index];
+
+    goal.currentDays++;
+    goal.temperature = (goal.currentDays / goal.period) * 100;
+
+    goal.memories = [
+      ...goal.memories,
+      {
+        "date": "${DateTime.now().month}월 ${DateTime.now().day}일",
+        "imagePath": path,
+        "description": description // AI 설명 저장
+      }
+    ];
+  }
+
+
   void releaseToFarm(int index) {
     if (activeGoals[index].status == GoalStatus.chicken) {
       completedFarm.add(activeGoals[index]);
@@ -20,7 +39,7 @@ class DbHelper {
   }
 
   // 사진 저장 로직
-  void recordProgress(int index, String path) {
+/*  void recordProgress(int index, String path) {
     if (index >= activeGoals.length) return; // 에러 방지
 
     final goal = activeGoals[index];
@@ -35,5 +54,5 @@ class DbHelper {
       ...goal.memories,
       {"date": dateStr, "imagePath": path}
     ];
-  }
+  }*/
 }

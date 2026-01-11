@@ -8,8 +8,8 @@ class Goal {
   double temperature;
   String frequency;
 
-  // 🔥 추가된 부분: 이 목표에 속한 사진 기록들 (경로와 날짜 저장)
-  List<Map<String, String>> memories;
+  // Dynamic 으로 자료형 변경
+  List<Map<String, dynamic>> memories;
 
   Goal({
     required this.id,

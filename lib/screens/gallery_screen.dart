@@ -188,28 +188,44 @@ class _GalleryScreenState extends State<GalleryScreen> {
               crossAxisCount: 3, // 한 줄에 3개씩
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: 1, // 정사각형
+              childAspectRatio: 0.8, // 정사각형
             ),
             itemBuilder: (context, imgIndex) {
               final memory = goal.memories[imgIndex];
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(10), // 사진 둥글게
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // 저장된 사진 파일 불러오기
-                    Image.file(File(memory['imagePath']!), fit: BoxFit.cover),
-                    // 사진 아래 날짜 표시줄
-                    Positioned(
-                      bottom: 0, left: 0, right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        color: Colors.black54, // 반투명 검은 배경
-                        child: Text(memory['date']!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 10)),
+              final String description = memory['description'] ?? "";
+              return Column(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.file(File(memory['imagePath']!), fit: BoxFit.cover),
+                          Positioned(
+                            bottom: 0, left: 0, right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              color: Colors.black54,
+                              child: Text(memory['date']!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 9)),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  // 🔥 [추가됨] 사진 아래에 AI 설명(description) 표시
+                  if (description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 9, color: Colors.brown),
+                      ),
+                    ),
+                ],
               );
             },
           ),

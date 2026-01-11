@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import '../database/db_helper.dart';
 import '../models/goal_model.dart';
+import '../screens/image_check_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -157,7 +158,30 @@ class _HomeScreenState extends State<HomeScreen> {
     if (image == null) return;
 
     if (!mounted) return;
-    showDialog(
+    // pcw의 AI 검열 화면으로 이동하여 인증 수행
+    final String? resultDesc = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageCheckScreen(
+          imagePath: image.path,
+          goal: db.activeGoals[index], // bsy 모델 객체 전달
+        ),
+      ),
+    );
+
+    // 인증 성공 시(설명 텍스트가 반환됨) DB 업데이트
+    if (resultDesc != null) {
+      setState(() {
+        db.recordProgress(index, image.path, resultDesc);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("인증 성공! 온도가 올라갔닭 🔥"))
+      );
+    }
+
+
+    // 기존 인증 코드
+/*    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
@@ -174,9 +198,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Timer(const Duration(seconds: 2), () {
       Navigator.pop(context);
-      setState(() { db.recordProgress(index, image.path); });
+      setState(() { db.recordProgress(index, image.path, image.); });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("인증 성공! 온도가 올라갔닭 🔥")));
-    });
+    }*/
   }
 
   // ----------------------------------------------------------------------
