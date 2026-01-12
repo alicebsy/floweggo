@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'screens/farm_screen.dart';
 import 'screens/gallery_screen.dart';
@@ -12,7 +13,21 @@ class CozyFarmApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(scaffoldBackgroundColor: const Color(0xFFFFF9C4)),
+      theme: ThemeData(
+        useMaterial3: true,
+        // 따뜻하고 세련된 크림색 배경
+        scaffoldBackgroundColor: const Color(0xFFFDFCFB),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFE67E22),
+          primary: const Color(0xFFD35400),
+          surface: Colors.white,
+        ),
+        // 둥글둥글하면서 가독성 좋은 폰트
+        textTheme: GoogleFonts.notoSansKrTextTheme().apply(
+          bodyColor: const Color(0xFF4E342E),
+          displayColor: const Color(0xFF4E342E),
+        ),
+      ),
       home: const MainNavigation(),
     );
   }
@@ -20,7 +35,6 @@ class CozyFarmApp extends StatelessWidget {
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
-
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
@@ -32,15 +46,36 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: _pages[_index]),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.photo_library), label: "성장기록"),
-          BottomNavigationBarItem(icon: Icon(Icons.egg), label: "인큐베이터"),
-          BottomNavigationBarItem(icon: Icon(Icons.agriculture), label: "나의 농장"),
-        ],
+      body: _pages[_index],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 25)],
+        ),
+        child: NavigationBar(
+          height: 75,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          indicatorColor: const Color(0xFFFDF2E9),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.auto_awesome_motion_rounded, color: Colors.grey),
+              selectedIcon: Icon(Icons.auto_awesome_motion_rounded, color: Color(0xFFD35400)),
+              label: "성장기록이닭",
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.egg_rounded, color: Colors.grey),
+              selectedIcon: Icon(Icons.egg_rounded, color: Color(0xFFD35400)),
+              label: "부화장이닭",
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.grid_view_rounded, color: Colors.grey),
+              selectedIcon: Icon(Icons.grid_view_rounded, color: Color(0xFFD35400)),
+              label: "농장이닭",
+            ),
+          ],
+        ),
       ),
     );
   }

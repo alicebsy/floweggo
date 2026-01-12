@@ -12,15 +12,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final PageController _pageController = PageController();
+  // 카드 양옆이 살짝 보이도록 설정 (0.88)
+  final PageController _pageController = PageController(viewportFraction: 0.88);
   final db = DbHelper();
   final ImagePicker _picker = ImagePicker();
-
-  // 현재 몇 번째 페이지인지 확인하기 위한 변수 (화살표 표시용)
   int _currentPage = 0;
 
   // ----------------------------------------------------------------------
-  // 1. 목표 수정 팝업
+  // 1. 목표 수정 팝업 (기능 유지)
   // ----------------------------------------------------------------------
   void _showEditGoalDialog(int index, Goal goal) {
     final nameController = TextEditingController(text: goal.name);
@@ -31,18 +30,38 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setST) => AlertDialog(
-          title: const Text("수정이닭! ✏️"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          title: const Text("수정이닭! ✏️", style: TextStyle(fontWeight: FontWeight.w900)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: "목표 이름")),
-                TextField(controller: periodController, decoration: const InputDecoration(labelText: "목표 기간(일)"), keyboardType: TextInputType.number),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: "목표 이름",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                ),
                 const SizedBox(height: 15),
-                const Align(alignment: Alignment.centerLeft, child: Text("빈도", style: TextStyle(fontSize: 12, color: Colors.grey))),
+                TextField(
+                  controller: periodController,
+                  decoration: InputDecoration(
+                    labelText: "목표 기간(일)",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 15),
+                const Align(alignment: Alignment.centerLeft, child: Text("빈도 선택이닭", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold))),
                 DropdownButton<String>(
                   value: ["매일", "격일", "주 3회"].contains(selectedFreq) ? selectedFreq : "매일",
                   isExpanded: true,
+                  underline: const SizedBox(),
                   items: ["매일", "격일", "주 3회"].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
                   onChanged: (v) => setST(() => selectedFreq = v!),
                 ),
@@ -50,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소")),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -61,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
                 Navigator.pop(context);
               },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD35400), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
               child: const Text("수정 완료"),
             ),
           ],
@@ -81,18 +101,37 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setST) => AlertDialog(
-          title: const Text("입양할닭! 🐣"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          title: const Text("입양할닭! 🐣", style: TextStyle(fontWeight: FontWeight.w900)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: "목표 이름")),
-                TextField(controller: periodController, decoration: const InputDecoration(labelText: "목표 기간(일)"), keyboardType: TextInputType.number),
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: "어떤 알을 키울 거냐닭?",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                ),
                 const SizedBox(height: 15),
-                const Align(alignment: Alignment.centerLeft, child: Text("빈도", style: TextStyle(fontSize: 12, color: Colors.grey))),
+                TextField(
+                  controller: periodController,
+                  decoration: InputDecoration(
+                    labelText: "목표 기간(일)",
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 15),
                 DropdownButton<String>(
                   value: selectedFreq,
                   isExpanded: true,
+                  underline: const SizedBox(),
                   items: ["매일", "격일", "주 3회"].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
                   onChanged: (v) => setST(() => selectedFreq = v!),
                 ),
@@ -115,7 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pop(context);
                 }
               },
-              child: const Text("입양"),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD35400), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+              child: const Text("입양하기"),
             ),
           ],
         ),
@@ -129,24 +169,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showImageSourceSheet(int index) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 15),
-            const Text("인증 방법을 선택해주세닭!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 20),
+            const Text("인증 방법을 선택해주세닭!", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const SizedBox(height: 10),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.brown),
-              title: const Text("카메라로 촬영"),
+              leading: const CircleAvatar(backgroundColor: Color(0xFFFDF2E9), child: Icon(Icons.camera_alt, color: Color(0xFFD35400))),
+              title: const Text("카메라로 촬영이닭"),
               onTap: () { Navigator.pop(context); _handleAuth(index, ImageSource.camera); },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.brown),
-              title: const Text("갤러리에서 선택"),
+              leading: const CircleAvatar(backgroundColor: Color(0xFFFDF2E9), child: Icon(Icons.photo_library, color: Color(0xFFD35400))),
+              title: const Text("갤러리에서 선택이닭"),
               onTap: () { Navigator.pop(context); _handleAuth(index, ImageSource.gallery); },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
           ],
         ),
       ),
@@ -156,228 +197,182 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handleAuth(int index, ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
     if (image == null) return;
-
     if (!mounted) return;
-    // pcw의 AI 검열 화면으로 이동하여 인증 수행
+
     final String? resultDesc = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ImageCheckScreen(
           imagePath: image.path,
-          goal: db.activeGoals[index], // bsy 모델 객체 전달
+          goal: db.activeGoals[index],
         ),
       ),
     );
 
-    // 인증 성공 시(설명 텍스트가 반환됨) DB 업데이트
     if (resultDesc != null) {
       setState(() {
         db.recordProgress(index, image.path, resultDesc);
       });
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("인증 성공! 온도가 올라갔닭 🔥"))
+          const SnackBar(content: Text("인증 성공! 온도가 올라갔닭 🔥"), behavior: SnackBarBehavior.floating)
       );
     }
-
-
-    // 기존 인증 코드
-/*    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.brown),
-            SizedBox(height: 20),
-            Text("AI로 확인 중...", style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-
-    Timer(const Duration(seconds: 2), () {
-      Navigator.pop(context);
-      setState(() { db.recordProgress(index, image.path, image.); });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("인증 성공! 온도가 올라갔닭 🔥")));
-    }*/
   }
 
   // ----------------------------------------------------------------------
-  // 4. UI 구성
+  // 4. UI 구성 (오버플로우 해결 버전)
   // ----------------------------------------------------------------------
-  Widget _buildEmptyUI() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("부화장이닭! 🥚", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24)),
+        centerTitle: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(onPressed: _showAddGoalDialog, icon: const Icon(Icons.add_circle_outline_rounded, size: 28)),
+          const SizedBox(width: 10),
+        ],
+      ),
+      body: db.activeGoals.isEmpty
+          ? _buildEmptyUI()
+          : Stack(
         children: [
-          const Text("🛖", style: TextStyle(fontSize: 100)),
-          const SizedBox(height: 20),
-          const Text("둥지가 텅 비었닭!\n새 알을 입양해 주세요.", textAlign: TextAlign.center, style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 10)])),
-          const SizedBox(height: 30),
-          ElevatedButton(onPressed: _showAddGoalDialog, child: const Text("+ 새로운 알 입양하기")),
+          PageView.builder(
+            controller: _pageController,
+            itemCount: db.activeGoals.length,
+            onPageChanged: (i) => setState(() => _currentPage = i),
+            itemBuilder: (context, index) {
+              final goal = db.activeGoals[index];
+              return _buildGoalCard(goal, index);
+            },
+          ),
+          // 화살표
+          if (_currentPage > 0)
+            _buildNavArrow(Icons.arrow_back_ios_new_rounded, Alignment.centerLeft,
+                    () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)),
+          if (_currentPage < db.activeGoals.length - 1)
+            _buildNavArrow(Icons.arrow_forward_ios_rounded, Alignment.centerRight,
+                    () => _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)),
         ],
       ),
     );
   }
 
-  Widget _buildTempBar(Goal goal) {
+  Widget _buildGoalCard(Goal goal, int index) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 40, offset: const Offset(0, 15))],
+      ),
+      // 🔥 [해결] 공간이 부족할 경우 스크롤이 가능하도록 감쌈
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFFFDF2E9), borderRadius: BorderRadius.circular(20)),
+                  child: Text("D-${goal.period - goal.currentDays} 남았닭", style: const TextStyle(color: Color(0xFFE67E22), fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+                Row(
+                  children: [
+                    IconButton(onPressed: () => _showEditGoalDialog(index, goal), icon: const Icon(Icons.edit_note_rounded, color: Colors.grey, size: 26), constraints: const BoxConstraints(), padding: EdgeInsets.zero),
+                    const SizedBox(width: 8),
+                    IconButton(onPressed: () { setState(() => db.activeGoals.removeAt(index)); }, icon: const Icon(Icons.delete_outline_rounded, color: Colors.grey, size: 22), constraints: const BoxConstraints(), padding: EdgeInsets.zero),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // 🔥 [해결] 이모지가 너무 크면 자동으로 줄어들게 처리
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(goal.emoji, style: const TextStyle(fontSize: 110)),
+            ),
+            const SizedBox(height: 15),
+            Text(goal.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -1), textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text("${goal.frequency} 지키고 있닭!", style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 20),
+            _buildGrowthBar(goal),
+            const SizedBox(height: 25),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showImageSourceSheet(index),
+                icon: const Icon(Icons.local_fire_department_rounded, size: 20),
+                label: const Text("🔥 온도 높이기닭!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2D2D2D),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrowthBar(Goal goal) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("온도", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              Text("${goal.temperature.toInt()}°C / 100°C", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("성장 에너지닭!", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.black54)),
+            Text("${goal.temperature.toInt()}%", style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFD35400), fontSize: 18)),
+          ],
         ),
-        const SizedBox(height: 8),
-        Container(
-          width: 280,
-          height: 18,
-          decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(10)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(value: goal.progress, color: Colors.orangeAccent, backgroundColor: Colors.transparent),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: LinearProgressIndicator(
+            value: goal.progress,
+            minHeight: 12,
+            backgroundColor: const Color(0xFFF1F3F5),
+            color: const Color(0xFFE67E22),
           ),
         ),
       ],
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+  Widget _buildNavArrow(IconData icon, Alignment alignment, VoidCallback onTap) {
+    return Align(
+      alignment: alignment,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: IconButton(icon: Icon(icon, color: Colors.black12, size: 30), onPressed: onTap),
+      ),
+    );
+  }
+
+  Widget _buildEmptyUI() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox.expand(child: Image.asset('assets/images/sum.png', fit: BoxFit.cover)),
-
-          SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: db.activeGoals.isEmpty
-                      ? _buildEmptyUI()
-                  // 🔥 [핵심 수정] PageView와 화살표를 겹치기 위해 Stack 사용
-                      : Stack(
-                    children: [
-                      PageView.builder(
-                        controller: _pageController,
-                        itemCount: db.activeGoals.length,
-                        onPageChanged: (index) {
-                          // 페이지가 넘어갈 때 현재 페이지 번호 업데이트 (화살표 표시 여부 결정)
-                          setState(() {
-                            _currentPage = index;
-                          });
-                        },
-                        itemBuilder: (context, index) {
-                          final goal = db.activeGoals[index];
-                          return Column(
-                            children: [
-                              const SizedBox(height: 40),
-                              const Spacer(flex: 4), // 넉넉한 상단 여백
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      goal.name,
-                                      style: const TextStyle(
-                                        fontSize: 32,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [Shadow(blurRadius: 10)],
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  IconButton(onPressed: () => _showEditGoalDialog(index, goal), icon: const Icon(Icons.edit, color: Colors.white70, size: 24)),
-                                  IconButton(onPressed: () { setState(() => db.activeGoals.removeAt(index)); }, icon: const Icon(Icons.delete_outline, color: Colors.white70, size: 24)),
-                                ],
-                              ),
-
-                              const SizedBox(height: 10),
-                              Text("D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(fontSize: 18, color: Colors.white70)),
-
-                              const Spacer(flex: 1),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(goal.emoji, style: const TextStyle(fontSize: 140)),
-                              ),
-                              const Spacer(flex: 1),
-                              _buildTempBar(goal),
-                              const Spacer(flex: 2),
-
-                              ElevatedButton.icon(
-                                onPressed: () => _showImageSourceSheet(index),
-                                icon: const Icon(Icons.local_fire_department),
-                                label: const Text("🔥 온도 높이기", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.brown, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
-                              ),
-
-                              const SizedBox(height: 15),
-
-                              TextButton(
-                                onPressed: _showAddGoalDialog,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(20)),
-                                  child: const Text("+ 다른 알 입양하기", style: TextStyle(color: Colors.white, fontSize: 14)),
-                                ),
-                              ),
-                              const Spacer(flex: 2),
-                            ],
-                          );
-                        },
-                      ),
-
-                      // 🔥 [왼쪽 화살표] 첫 번째 페이지가 아닐 때만 보임
-                      if (_currentPage > 0)
-                        Positioned(
-                          left: 10,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios, color: Colors.white70, size: 40),
-                              onPressed: () {
-                                _pageController.previousPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-
-                      // 🔥 [오른쪽 화살표] 마지막 페이지가 아닐 때만 보임
-                      if (_currentPage < db.activeGoals.length - 1)
-                        Positioned(
-                          right: 10,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: IconButton(
-                              icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 40),
-                              onPressed: () {
-                                _pageController.nextPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          const Text("🛖", style: TextStyle(fontSize: 80)),
+          const SizedBox(height: 20),
+          const Text("둥지가 텅 비었닭!\n새로운 알을 입양해 보겠닭?", textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: _showAddGoalDialog,
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD35400), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+            child: const Text("+ 새 알 입양하기닭"),
           ),
         ],
       ),

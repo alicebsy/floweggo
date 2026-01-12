@@ -23,12 +23,22 @@ class DbHelper {
     goal.memories = [
       ...goal.memories,
       {
-        "date": "${DateTime.now().month}월 ${DateTime.now().day}일",
+        "date": "${DateTime
+            .now()
+            .month}월 ${DateTime
+            .now()
+            .day}일",
         "imagePath": path,
         "description": description // AI 설명 저장
       }
     ];
+
+    if (goal.temperature >= 100) {
+      completedFarm.add(goal); // 성공 목록에 추가
+      activeGoals.removeAt(index); // 진행 목록에서 삭제
+    }
   }
+
 
 
   void releaseToFarm(int index) {

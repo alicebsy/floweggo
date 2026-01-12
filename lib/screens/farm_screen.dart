@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/db_helper.dart';
+import '../models/goal_model.dart';
 
 class FarmScreen extends StatefulWidget {
   const FarmScreen({super.key});
@@ -11,7 +12,6 @@ class FarmScreen extends StatefulWidget {
 
 class _FarmScreenState extends State<FarmScreen> {
   final db = DbHelper();
-
   String _userName = "초록 농부";
 
   @override
@@ -20,6 +20,9 @@ class _FarmScreenState extends State<FarmScreen> {
     _loadUserName();
   }
 
+  // ----------------------------------------------------------------------
+  // 1. 사용자 이름 관리 기능 (기존 로직 유지)
+  // ----------------------------------------------------------------------
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -35,282 +38,235 @@ class _FarmScreenState extends State<FarmScreen> {
     });
   }
 
+  // 이름 수정 다이얼로그 (최신 스타일로 변경)
   void _showNameDialog() {
     final controller = TextEditingController(text: _userName);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text("이름을 설정하세요", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: "새로운 이름을 입력해주세요",
-                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black)),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        title: const Text("이름을 정해달닭! ✍️", style: TextStyle(fontWeight: FontWeight.w900)),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: "새로운 이름을 입력해주세닭",
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(foregroundColor: Colors.black),
-            child: const Text("취소", style: TextStyle(fontSize: 16)),
-          ),
-          TextButton(
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
                 _saveUserName(controller.text);
                 Navigator.pop(context);
               }
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD35400),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text("확인", style: TextStyle(fontSize: 16)),
+            child: const Text("확인이닭"),
           ),
         ],
       ),
     );
   }
 
+  // ----------------------------------------------------------------------
+  // 2. UI 구성 (최신 디자인 + "~이닭!" 컨셉)
+  // ----------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    // 🐔 농장이 완전히 비었는지 확인
     bool isFarmEmpty = db.completedFarm.isEmpty && db.activeGoals.isEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // ---------------------------------------------------------
-          // 1. 배경 이미지
-          // ---------------------------------------------------------
-          SizedBox.expand(
-            child: Opacity(
-              // 🔥 [수정됨] 농장이 비어있으면(1.0) 선명하게, 뭐라도 있으면(0.5) 흐리게
-              opacity: isFarmEmpty ? 1.0 : 0.5,
-              child: Image.asset(
-                'assets/images/farm_inside.png',
-                fit: BoxFit.cover,
+      body: CustomScrollView(
+        slivers: [
+          // 대형 앱바: 사용자 이름 표시 및 수정 기능 연동
+          SliverAppBar.large(
+            backgroundColor: const Color(0xFFFDFCFB),
+            title: GestureDetector(
+              onTap: _showNameDialog,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("$_userName님의 농장이닭!", style: const TextStyle(fontWeight: FontWeight.w900)),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.edit_rounded, size: 20, color: Colors.black26),
+                ],
               ),
             ),
+            centerTitle: false,
           ),
 
-          // ---------------------------------------------------------
-          // 2. 내용물
-          // ---------------------------------------------------------
-          SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const SizedBox(height: 10),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            sliver: isFarmEmpty
+                ? SliverFillRemaining(hasScrollBody: false, child: _buildEmptyUI())
+                : SliverList(
+              delegate: SliverChildListDelegate([
+                _buildFarmStats(),
+                const SizedBox(height: 35),
 
-                // 🧢 [헤더]
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("👨🏻‍🌾", style: TextStyle(fontSize: 45)),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: _showNameDialog,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            _userName,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            "님의 농장",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white70,
-                              shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.edit, color: Colors.white70, size: 20),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                _buildSectionHeader("🐣 부화 진행 중이닭", db.activeGoals.length),
+                if (db.activeGoals.isEmpty)
+                  _buildNoItemCard("아직 키우고 있는 알이 없닭!")
+                else
+                  ...db.activeGoals.map((g) => _buildFarmItem(g, false)).toList(),
+
+                const SizedBox(height: 35),
+
+                _buildSectionHeader("🐓 다 컸닭! 장하닭!", db.completedFarm.length),
+                if (db.completedFarm.isEmpty)
+                  _buildNoItemCard("성공해서 농장을 채워달닭!")
+                else
+                  ...db.completedFarm.map((g) => _buildFarmItem(g, true)).toList(),
 
                 const SizedBox(height: 50),
-
-                // 🔄 [분기점] 농장이 비었을 때 vs 닭이 있을 때
-                if (isFarmEmpty) ...[
-                  // 💨 1. 텅 빈 농장 화면 (배경이 선명하므로 그림자를 강하게 줌)
-                  Center(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 40),
-
-                        // "휑~" 텍스트와 바람 아이콘
-                        const Text(
-                          "🍃 휑~",
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white, // 선명한 흰색
-                            fontStyle: FontStyle.italic,
-                            shadows: [Shadow(blurRadius: 15, color: Colors.black)], // 그림자 강화
-                          ),
-                        ),
-                        const Icon(
-                          Icons.air,
-                          size: 100,
-                          color: Colors.white70,
-                          shadows: [Shadow(blurRadius: 15, color: Colors.black)], // 그림자 강화
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        // 메인 문구
-                        const Text(
-                          "아직은 조용한 농장이닭!",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [Shadow(blurRadius: 15, color: Colors.black)], // 그림자 강화
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-
-                        // 서브 문구 (박스 제거됨)
-                        const Text(
-                          "목표를 달성해서 이곳을\n멋진 닭들로 채워주세요",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white, // 흰색으로 변경
-                            height: 1.5,
-                            shadows: [Shadow(blurRadius: 10, color: Colors.black)], // 가독성을 위해 그림자 추가
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                ] else ...[
-                  // 🐔 2. 닭이 있을 때 보이는 화면
-
-                  // 🏆 성공이닭
-                  const Text(
-                    "🏆 성공이닭",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amberAccent,
-                      shadows: [Shadow(blurRadius: 5, color: Colors.black45)],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.amber, width: 2),
-                    ),
-                    child: db.completedFarm.isEmpty
-                        ? const Center(
-                      child: Text(
-                        "아직 성공한 닭이 없어요.",
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    )
-                        : Column(
-                      children: db.completedFarm.map((g) => ListTile(
-                        leading: const Text("🐓", style: TextStyle(fontSize: 30)),
-                        title: Text(g.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        trailing: const Icon(Icons.verified, color: Colors.blue),
-                      )).toList(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // 🌱 자라나는 중이닭
-                  const Text(
-                    "🌱 자라나는 중이닭",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.lightGreenAccent,
-                      shadows: [Shadow(blurRadius: 5, color: Colors.black45)],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: db.activeGoals.isEmpty
-                        ? const Center(
-                      child: Text(
-                        "키우고 있는 알이 없어요.",
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    )
-                        : Column(
-                      children: db.activeGoals.map((g) => Column(
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Text(g.emoji, style: const TextStyle(fontSize: 30)),
-                            title: Text(g.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("${g.temperature.toInt()}°C (D-${g.period - g.currentDays})"),
-                                const SizedBox(height: 5),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: LinearProgressIndicator(
-                                    value: g.progress,
-                                    minHeight: 8,
-                                    color: Colors.green,
-                                    backgroundColor: Colors.grey.shade300,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(),
-                        ],
-                      )).toList(),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 50),
-              ],
+              ]),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // 상단 통계 카드
+  Widget _buildFarmStats() {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE67E22), Color(0xFFD35400)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFFD35400).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _statItem("가족이 된 닭", "${db.completedFarm.length}마리"),
+          _statItem("진행 중인 알", "${db.activeGoals.length}개"),
+        ],
+      ),
+    );
+  }
+
+  Widget _statItem(String label, String value) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, int count) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        children: [
+          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
+            child: Text(count.toString(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 농장 아이템 카드 (최신 스타일)
+  Widget _buildFarmItem(Goal goal, bool isDone) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))],
+        border: Border.all(color: Colors.black.withOpacity(0.02)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 60, height: 60,
+            decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(20)),
+            alignment: Alignment.center,
+            child: Text(isDone ? "🐓" : goal.emoji, style: const TextStyle(fontSize: 34)),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.5)),
+                const SizedBox(height: 4),
+                Text(
+                  isDone ? "우리 농장의 늠름한 일꾼이닭!" : "${goal.temperature.toInt()}% 부화 중이닭",
+                  style: const TextStyle(color: Colors.black45, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          if (isDone)
+            const Icon(Icons.stars_rounded, color: Colors.amber, size: 32)
+          else
+            SizedBox(
+              width: 44, height: 44,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: goal.progress,
+                    strokeWidth: 5,
+                    backgroundColor: const Color(0xFFF1F3F5),
+                    color: const Color(0xFFE67E22),
+                  ),
+                  Text("${(goal.progress * 100).toInt()}", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoItemCard(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.black.withOpacity(0.05), style: BorderStyle.solid),
+      ),
+      child: Center(child: Text(message, style: const TextStyle(color: Colors.black26, fontWeight: FontWeight.bold))),
+    );
+  }
+
+  Widget _buildEmptyUI() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text("🍃", style: TextStyle(fontSize: 60)),
+        const SizedBox(height: 20),
+        const Text("둥지가 텅 비었닭!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 10),
+        const Text("목표를 달성해서 농장을\n멋진 닭들로 채워달닭!", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, height: 1.5)),
+      ],
     );
   }
 }
