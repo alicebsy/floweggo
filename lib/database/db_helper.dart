@@ -12,6 +12,11 @@ class DbHelper {
 
   void addGoal(Goal goal) => activeGoals.add(goal);
 
+  void deleteGoal(String id) {
+    activeGoals.removeWhere((g) => g.id == id);
+    completedFarm.removeWhere((g) => g.id == id);
+  }
+
   // 파라미터에 description 추가
   void recordProgress(int index, String path, String description) {
     if (index >= activeGoals.length) return;

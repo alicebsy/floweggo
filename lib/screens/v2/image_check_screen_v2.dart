@@ -6,23 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/goal_model.dart'; // Goal 모델 import
+import '../../models/goal_model.dart'; // Goal 모델 import
 
-class ImageCheckScreen extends StatefulWidget {
+class ImageCheckScreenV2 extends StatefulWidget {
   final String imagePath;
   final Goal goal; // 비교할 Goal 객체 전체를 전달받음
 
-  const ImageCheckScreen({
+  const ImageCheckScreenV2({
     super.key,
     required this.imagePath,
     required this.goal, // 생성자에 goal 추가
   });
 
   @override
-  ImageCheckScreenState createState() => ImageCheckScreenState();
+  ImageCheckScreenV2State createState() => ImageCheckScreenV2State();
 }
 
-class ImageCheckScreenState extends State<ImageCheckScreen> {
+class ImageCheckScreenV2State extends State<ImageCheckScreenV2> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isProcessing = true;
   bool _isRelated = false;
@@ -32,7 +32,7 @@ class ImageCheckScreenState extends State<ImageCheckScreen> {
 
   // 중요: 실제 앱에서는 API 키를 코드에 직접 노출하면 안 됩니다.
   // 이 키는 예시이며, 실제 키로 교체하고 안전한 방식으로 관리해야 합니다.
-  final String _apiKey = 'AIzaSyDHTcv2uw-a1FzQ8qwexY2a8925PJfMQwM';
+  final String _apiKey = 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM';
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class ImageCheckScreenState extends State<ImageCheckScreen> {
   // Gemini API를 사용하여 연관성을 확인하는 함수
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
     // Gemini API 키가 설정되지 않은 경우, 에러를 방지하고 사용자에게 입력을 요구하도록 기본값(false) 반환
-    if (_apiKey != 'AIzaSyDHTcv2uw-a1FzQ8qwexY2a8925PJfMQwM') {
+    if (_apiKey != 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM') {
       print("경고: Gemini API 키가 설정되지 않았습니다. 기본값인 '연관 없음'으로 처리합니다.");
       return false;
     }

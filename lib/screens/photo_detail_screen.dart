@@ -20,6 +20,7 @@ class PhotoDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // v2의 세련된 닫기 버튼
         leading: IconButton(
           icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
           onPressed: () => Navigator.pop(context),
@@ -29,7 +30,7 @@ class PhotoDetailScreen extends StatelessWidget {
       body: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          // 1. 중앙의 큰 이미지 (히어로 애니메이션 적용)
+          // 1. 중앙의 큰 이미지 (Hero 애니메이션 적용)
           Center(
             child: Hero(
               tag: imagePath, // 썸네일과 같은 태그를 사용해야 연결됨
@@ -42,9 +43,10 @@ class PhotoDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // 2. 하단 설명 영역 (그라데이션 배경 위에 텍스트)
+          // 2. 하단 설명 영역
           Container(
             width: double.infinity,
+            // v2의 구체적인 패딩 값
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -52,7 +54,8 @@ class PhotoDetailScreen extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.8),
+                  // v1의 부드러운 그라데이션
+                  Colors.black.withOpacity(0.7),
                 ],
               ),
             ),
@@ -61,10 +64,11 @@ class PhotoDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  date,
+                  "📅 $date",
                   style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
+                // 설명이 있으면 v1처럼 bold, 없으면 v2처럼 italic
                 if (description.isNotEmpty)
                   Text(
                     description,
@@ -72,7 +76,7 @@ class PhotoDetailScreen extends StatelessWidget {
                   )
                 else
                   const Text(
-                    "설명이 없는 기록이닭.",
+                    "기록된 설명이 없닭! 🐥",
                     style: TextStyle(color: Colors.white60, fontSize: 16, fontStyle: FontStyle.italic),
                   ),
               ],
