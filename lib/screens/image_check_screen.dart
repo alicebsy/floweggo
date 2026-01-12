@@ -1,21 +1,21 @@
-
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui'; // 🔥 유리 효과(Blur)를 위해 필수
 
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/goal_model.dart'; // Goal 모델 import
+import '../models/goal_model.dart';
 
 class ImageCheckScreen extends StatefulWidget {
   final String imagePath;
-  final Goal goal; // 비교할 Goal 객체 전체를 전달받음
+  final Goal goal;
 
   const ImageCheckScreen({
     super.key,
     required this.imagePath,
-    required this.goal, // 생성자에 goal 추가
+    required this.goal,
   });
 
   @override
@@ -26,17 +26,17 @@ class ImageCheckScreenState extends State<ImageCheckScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isProcessing = true;
   bool _isRelated = false;
-  String _checkingMessage = "이미지 분석 중..."; // 처리 중 표시할 메시지
+  String _checkingMessage = "이미지 분석 중이닭...";
 
   late ImageLabeler _imageLabeler;
 
-  // 중요: 실제 앱에서는 API 키를 코드에 직접 노출하면 안 됩니다.
-  // 이 키는 예시이며, 실제 키로 교체하고 안전한 방식으로 관리해야 합니다.
-  final String _apiKey = 'AIzaSyCF2ptXZC0op11i_49TNvcHQBuSzEYC4hs';
+  // 🔥 [주의] 실제 배포 시에는 API 키를 안전하게 관리해야 합니다.
+  final String _apiKey = 'AIzaSyDHTcv2uw-a1FzQ8qwexY2a8925PJfMQwM';
 
   @override
   void initState() {
     super.initState();
+    // 신뢰도 0.7 이상인 라벨만 가져오기
     final ImageLabelerOptions options = ImageLabelerOptions(confidenceThreshold: 0.7);
     _imageLabeler = ImageLabeler(options: options);
     _processImageAndCheckRelevance();
@@ -49,17 +49,20 @@ class ImageCheckScreenState extends State<ImageCheckScreen> {
     super.dispose();
   }
 
-  // Gemini API를 사용하여 연관성을 확인하는 함수
+  // 🤖 Gemini API 호출 함수 (디버깅 로그 추가됨)
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
-    // Gemini API 키가 설정되지 않은 경우, 에러를 방지하고 사용자에게 입력을 요구하도록 기본값(false) 반환
-    if (_apiKey != 'AIzaSyCF2ptXZC0op11i_49TNvcHQBuSzEYC4hs') {
-      print("경고: Gemini API 키가 설정되지 않았습니다. 기본값인 '연관 없음'으로 처리합니다.");
+    // 1. API 키 확인
+    if (_apiKey != 'AIzaSyDHTcv2uw-a1FzQ8qwexY2a8925PJfMQwM') {
+      print("🚨 [ERROR] 예시 API 키가 사용되었습니다. 본인의 키로 교체해주세요!");
       return false;
     }
 
+    print("🤖 [Gemini] 요청 시작...");
+    print("👉 목표: $goalTitle");
+    print("👉 감지된 라벨: $labels");
+
     final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey');
 
-    // Gemini에게 보낼 프롬프트 (더 관대하게 판단하도록 수정)
     final prompt = '''
       당신은 사용자의 습관 형성을 돕는 친절한 AI 어시스턴트입니다.
       사용자가 자신의 목표 달성을 인증하기 위해 사진을 제출했습니다.
@@ -68,143 +71,264 @@ class ImageCheckScreenState extends State<ImageCheckScreen> {
       - 사진에서 추출된 영어 라벨: [${labels.join(', ')}]
       
       이 라벨들을 바탕으로, 제출된 사진이 사용자의 목표와 간접적으로라도 연관될 가능성이 있는지 판단해주세요.
-      예를 들어, 목표가 "쓰레기 줍기"이고 라벨에 'Floor'나 'Street'가 있다면 연관될 수 있습니다.
-      목표가 "운동하기"이고 라벨에 'Person'이나 'Room', 'Shoe'가 있어도 연관될 수 있습니다.
-      완벽하게 일치하지 않아도 괜찮으니, 사용자의 상황을 고려하여 관대하게 판단해주세요.
-      
+      관대하게 판단해주세요.
       답변은 반드시 "yes" 또는 "no"로만 해주세요.
     ''';
 
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
-      'contents': [
-        {
-          'parts': [
-            {'text': prompt}
-          ]
-        }
-      ]
+      'contents': [{'parts': [{'text': prompt}]}]
     });
 
     try {
       final response = await http.post(url, headers: headers, body: body);
 
+      print("🤖 [Gemini] 응답 상태 코드: ${response.statusCode}");
+
       if (response.statusCode == 200) {
-        final decodedResponse = jsonDecode(utf8.decode(response.bodyBytes)); // UTF-8로 디코딩
-        final text = decodedResponse['candidates'][0]['content']['parts'][0]['text'] as String;
-        print("Gemini API 응답: $text");
-        return text.trim().toLowerCase() == 'yes';
+        final decodedResponse = jsonDecode(utf8.decode(response.bodyBytes));
+        print("🤖 [Gemini] 전체 응답: $decodedResponse"); // 🔥 전체 응답 확인
+
+        // 응답 파싱 안전하게 처리
+        try {
+          final text = decodedResponse['candidates'][0]['content']['parts'][0]['text'] as String;
+          print("🤖 [Gemini] 최종 판단 결과: ${text.trim()}");
+          return text.trim().toLowerCase() == 'yes';
+        } catch (e) {
+          print("🚨 [ERROR] 응답 파싱 실패: $e");
+          return false;
+        }
       } else {
-        print("Gemini API 오류: ${response.statusCode} ${response.body}");
-        return false; // API 오류 시 기본값은 '연관 없음'
+        // 200이 아닐 경우 에러 내용 출력
+        print("🚨 [ERROR] Gemini API 호출 실패!");
+        print("🚨 본문: ${response.body}");
+        return false;
       }
     } catch (e) {
-      print("Gemini API 호출 오류: $e");
-      return false; // 네트워크 등 다른 오류 발생 시 기본값은 '연관 없음'
+      print("🚨 [ERROR] 네트워크 연결 오류 또는 기타 예외: $e");
+      return false;
     }
   }
 
-  // ML Kit과 Gemini를 순차적으로 호출하여 처리하는 함수
+  // 🖼️ 이미지 분석 함수 (ML Kit 디버깅 로그 추가됨)
   Future<void> _processImageAndCheckRelevance() async {
-    // 1. ML Kit으로 이미지에서 라벨 추출
-    final inputImage = InputImage.fromFilePath(widget.imagePath);
-    final List<ImageLabel> imageLabels = await _imageLabeler.processImage(inputImage);
-    final List<String> labelTexts = imageLabels.map((label) => label.label).toList();
+    print("📸 [ML Kit] 이미지 분석 시작: ${widget.imagePath}");
 
-    print("ML Kit으로 추출된 라벨: $labelTexts");
+    try {
+      final inputImage = InputImage.fromFilePath(widget.imagePath);
+      final List<ImageLabel> imageLabels = await _imageLabeler.processImage(inputImage);
+      final List<String> labelTexts = imageLabels.map((label) => label.label).toList();
 
-    // 추출된 라벨이 없으면 사용자에게 설명 요구
-    if (labelTexts.isEmpty) {
+      print("📸 [ML Kit] 감지된 라벨 목록: $labelTexts");
+
+      if (labelTexts.isEmpty) {
+        print("⚠️ [ML Kit] 라벨을 하나도 찾지 못했습니다.");
+        if (mounted) setState(() { _isProcessing = false; _isRelated = false; });
+        return;
+      }
+
+      if (mounted) setState(() { _checkingMessage = "목표와 맞는지 고민 중이닭..."; });
+
+      // Gemini에게 물어보기
+      final bool isGeminiRelated = await _isRelatedToGoal(labelTexts, widget.goal.name);
+
+      if (mounted) {
+        setState(() {
+          _isRelated = isGeminiRelated;
+          _isProcessing = false;
+        });
+      }
+
+      if (isGeminiRelated) {
+        if (!mounted) return;
+        print("✨ [Success] 목표 달성 확인됨!");
+        Navigator.pop(context, 'AI가 목표 달성을 확인했닭! ✨');
+      } else {
+        print("🤔 [Info] AI가 관련성을 찾지 못함. 사용자 입력 대기.");
+      }
+
+    } catch (e) {
+      print("🚨 [ERROR] ML Kit 처리 중 치명적 오류 발생: $e");
       if (mounted) {
         setState(() {
           _isProcessing = false;
-          _isRelated = false;
+          _isRelated = false; // 에러 나면 수동 입력으로 유도
         });
       }
-      return;
     }
+  }
 
-    // 2. Gemini API로 연관성 확인
-    if (mounted) {
-      setState(() {
-        _checkingMessage = "목표와 연관성 확인 중...";
-      });
-    }
-
-    final bool isGeminiRelated = await _isRelatedToGoal(labelTexts, widget.goal.name);
-
-    if (mounted) {
-      setState(() {
-        _isRelated = isGeminiRelated;
-        _isProcessing = false;
-      });
-    }
-
-    // 3. 연관성이 있으면 자동으로 등록하고 화면 닫기
-    if (isGeminiRelated) {
-      if (!mounted) return;
-      Navigator.pop(context, 'AI가 목표 달성을 확인했닭! ✨'); // 자동 등록을 위해 빈 설명 반환
-    }
+  // 🔥 [디자인] 유리 효과 카드 위젯
+  Widget _buildGlassCard({required Widget child, EdgeInsetsGeometry? padding}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+          ),
+          child: child,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("인증 사진 확인"),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Image.file(File(widget.imagePath)),
-            const SizedBox(height: 24),
-            if (_isProcessing)
-              Center(
-                child: Column(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(_checkingMessage),
-                  ],
-                ),
-              )
-            else if (!_isRelated)
-              Column(
-                children: [
-                  const Text(
-                    'AI가 목표와 관련이 적다고 판단했어요.\n사진에 대한 설명을 간단히 남겨주세요.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, height: 1.5),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 배경
+          SizedBox.expand(
+            child: Opacity(
+              opacity: 0.6,
+              child: Image.asset(
+                'assets/images/farm_inside.png', // 배경 이미지
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[900]),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // 상단 바
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      _buildGlassCard(
+                        padding: const EdgeInsets.all(8),
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.arrow_back, color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "인증 사진 확인",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: '예: 오늘은 공원에서 주운 쓰레기들',
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 선택된 이미지
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            constraints: const BoxConstraints(maxHeight: 400),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Image.file(
+                              File(widget.imagePath),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 상태창
+                        _buildGlassCard(
+                          child: Column(
+                            children: [
+                              if (_isProcessing) ...[
+                                const CircularProgressIndicator(color: Colors.white),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _checkingMessage,
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ] else if (!_isRelated) ...[
+                                const Icon(Icons.help_outline, color: Colors.amberAccent, size: 40),
+                                const SizedBox(height: 10),
+                                const Text(
+                                  'AI가 고개를 갸웃거린닭... 🤔',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  '사진이 목표와 관련이 적어 보여요.\n어떤 상황인지 설명을 남겨주세요!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.4),
+                                ),
+                                const SizedBox(height: 20),
+                                TextField(
+                                  controller: _descriptionController,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.black.withOpacity(0.3),
+                                    hintText: '예: 공원에서 쓰레기를 주웠어요',
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  ),
+                                  maxLines: 2,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 버튼
+                        if (!_isProcessing)
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context, _descriptionController.text);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.brown[400],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              elevation: 5,
+                            ),
+                            child: const Text(
+                              '기록 남기기',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
                     ),
-                    maxLines: 3,
                   ),
-                ],
-              ),
-            const SizedBox(height: 24),
-            // 처리 과정이 끝난 후에만 등록하기 버튼 표시
-            if (!_isProcessing)
-              ElevatedButton(
-                onPressed: () {
-                  // 설명이 있으면 설명을, 없으면 빈 문자열을 반환
-                  Navigator.pop(context, _descriptionController.text);
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('등록하기'),
-              ),
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
