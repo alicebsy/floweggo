@@ -67,20 +67,24 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     return DateTime.now().isAfter(endDate);
   }
 
-// 1일 1회 인증 제한 수정
+  // 1일 1회 인증 제한 수정
   bool _isVerifiedToday(Goal goal) {
-    // 1. 기록이 없으면 당연히 인증 안 함
     if (goal.memories.isEmpty) return false;
+    final lastMemory = goal.memories.last;
 
-    // 2. 오늘 날짜를 "2026-01-13" 같은 형식으로 구함 (시간 제거)
-    String todayStr = DateTime.now().toString().split(' ')[0];
+    // 1. timestamp가 있으면 시간 객체로 정확히 비교
+    if (lastMemory.containsKey('timestamp')) {
+      DateTime lastDate = DateTime.parse(lastMemory['timestamp']);
+      DateTime now = DateTime.now();
+      return lastDate.year == now.year &&
+          lastDate.month == now.month &&
+          lastDate.day == now.day;
+    }
 
-    // 3. memories 리스트를 전부 뒤져서, 날짜 앞부분이 오늘과 같은 게 '하나라도' 있는지 확인 (.any)
-    return goal.memories.any((memory) {
-      // 저장된 날짜가 "2026-01-13 14:30"일 수도 있으니 앞부분만 자름
-      String memoryDate = memory['date'].toString().split(' ')[0];
-      return memoryDate == todayStr;
-    });
+    // 2. 없으면 V1 스타일의 날짜 문자열 비교 (db_helper 저장 방식 대응)
+    DateTime now = DateTime.now();
+    String todayStr = "${now.year}-${now.month}-${now.day}";
+    return lastMemory['date'] == todayStr;
   }
 
   void _addEventToCalendar(Goal goal) {
@@ -560,59 +564,25 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     final String? resultDesc = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ImageCheckScreenV2(
-              imagePath: image.path,
-              goal: goal,
-            ),
+        builder: (context) => ImageCheckScreenV2(imagePath: image.path, goal: goal),
       ),
     );
 
     if (resultDesc != null) {
       setState(() {
-        // 1. DB에 영구 저장
         int index = db.activeGoals.indexOf(goal);
         if (index != -1) {
+          // recordProgress 내부에서 memories 추가와 온도 계산이 모두 이루어집니다.
           db.recordProgress(index, image.path, resultDesc);
         }
-
-        // -------------------------------------------------------------
-        // 🔥 [핵심 수정] UI가 즉시 반응하도록 강제 업데이트
-        // -------------------------------------------------------------
-        // 오늘 날짜 포맷 (YYYY-MM-DD)
-        String todayDate = DateTime.now().toString().split(' ')[0];
-
-        // 현재 화면에 있는 goal 객체의 memories 리스트에 방금 찍은 사진 정보를 즉시 추가합니다.
-        // 이렇게 하면 _isVerifiedToday() 함수가 바로 'true'를 반환하게 됩니다.
-        goal.memories.add({
-          'imagePath': image.path,
-          'description': resultDesc,
-          'date': todayDate, // 날짜 형식을 확실하게 지정
-        });
-
-        // 혹시라도 온도(진행률)도 바로 반영하고 싶다면:
-        goal.currentDays += 1; // 일수 증가 (필요 시)
-        goal.temperature = (goal.memories.length / goal.period) * 100;
-        // -------------------------------------------------------------
       });
 
-      if (resultDesc != null) {
-        setState(() {
-          int index = db.activeGoals.indexOf(goal);
-          if (index != -1) {
-            db.recordProgress(index, image.path, resultDesc);
-          }
-        });
-
-        if (goal.temperature >= 100) {
-          final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-          _markAsCompleted(goal.id, today);
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("🎉 축하해! 드디어 꽃이 되었어!")));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("목표 달성이 기록되었습니다!")));
-        }
+      if (goal.temperature >= 100) {
+        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        _markAsCompleted(goal.id, today);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🎉 축하해! 드디어 꽃이 되었어!")));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("목표 달성이 기록되었습니다!")));
       }
     }
   }
@@ -620,17 +590,15 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
   @override
   Widget build(BuildContext context) {
     final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
     final visibleGoals = db.activeGoals.where((goal) {
-      if (_completionDates.containsKey(goal.id)) {
-        return _completionDates[goal.id] == todayStr;
-      }
-      return true; 
+      if (_completionDates.containsKey(goal.id)) return _completionDates[goal.id] == todayStr;
+      return true;
     }).toList().reversed.toList();
 
     return Scaffold(
       backgroundColor: Colors.grey[50], // 배경색을 흰색 계열로 변경
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(onPressed: _showAddGoalDialog, icon: const Icon(Icons.add_circle_outline_rounded, size: 28)),
           const SizedBox(width: 12),
@@ -638,45 +606,35 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
       ),
       body: visibleGoals.isEmpty
           ? _buildEmptyUI()
-          : Stack(
-        children: [
-          PageView.builder(
+          : PageView.builder(
             controller: _pageController,
             itemCount: visibleGoals.length,
-            onPageChanged: (i) => setState(() => _currentPage = i),
-            itemBuilder: (context, index) {
-              final goal = visibleGoals[index];
-              return _buildGoalCard(goal, index);
-            },
-          ),
-          if (_currentPage > 0)
-            _buildNavArrow(Icons.arrow_back_ios_new_rounded, Alignment.centerLeft,
-                    () => _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)),
-          if (_currentPage < visibleGoals.length - 1)
-            _buildNavArrow(Icons.arrow_forward_ios_rounded, Alignment.centerRight,
-                    () => _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)),
-        ],
-      ),
+            itemBuilder: (context, index) => _buildGoalCard(visibleGoals[index], index),
+            ),
     );
   }
 
   // 🔥 카드 위젯 수정
   Widget _buildGoalCard(Goal goal, int index) {
 
+    bool isFailed = _isGoalFailed(goal);
     bool hasVerifiedToday = _isVerifiedToday(goal);
-
-    bool isFailed = (goal.period - goal.currentDays) < 0 &&
-        ((goal.memories.length / goal.period) * 100) < 100;
-
-    bool canVerify = !isFailed && !hasVerifiedToday;
+    bool canVerify = !isFailed && !hasVerifiedToday && goal.temperature < 100;
     // -----------------------------------------------------------
 
+    DateTime startDate;
+    try {
+      startDate = DateTime.parse(goal.id);
+    } catch (e) {
+      startDate = DateTime.now();
+    }
+    DateTime endDate = startDate.add(Duration(days: goal.period));
+    String dateRange = "${DateFormat('yyyy.MM.dd').format(startDate)} ~ ${DateFormat('yyyy.MM.dd').format(endDate)}";
 
-
-    String stageText = "시작 단계";
+    String stageText = "시작 전";
     Color stageColor = Colors.blueGrey;
-    if (goal.progress >= 0.5) { stageText = "진행 중"; stageColor = Colors.blueAccent; }
-    if (goal.progress >= 1.0) { stageText = "달성 완료"; stageColor = Colors.green; }
+    if (goal.progress > 0) { stageText = "진행 중"; stageColor = Colors.green; }
+    if (goal.progress >= 1.0) { stageText = "달성 완료"; stageColor = Colors.brown; }
     if (isFailed) { stageText = "기간 만료"; stageColor = Colors.redAccent; }
 
     // 메인 블록이 화면에 잘 맞도록 마진과 패딩을 수정합니다.
@@ -713,15 +671,19 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
                   ),
                 ],
               ),
-              const SizedBox(height: 50), // 여백 감소 (15 -> 10)
+              const SizedBox(height: 10),
+              Text(goal.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 감소 (24 -> 22)
+              const SizedBox(height: 4),
+              Text(dateRange, style: const TextStyle(color: Colors.black38, fontSize: 12)),
+              const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(isFailed ? "🥀" : goal.emoji2, style: const TextStyle(fontSize: 80)), // 이모지 크기 감소 (90 -> 80)
+                child: Text(isFailed ? "🥀" : goal.emoji2, style: const TextStyle(fontSize: 70)), // 이모지 크기 감소 (90 -> 80)
               ),
               const SizedBox(height: 8), // 여백 감소 (10 -> 8)
-              Text(goal.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 감소 (24 -> 22)
-              const SizedBox(height: 4), // 여백 감소 (6 -> 4)
-              Text(isFailed ? "도전 기간이 끝났어요.." : "남은 기간: D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(color: Colors.grey, fontSize: 13)), // 폰트 크기 감소 (14 -> 13)
+              Text(isFailed ? "도전 기간이 끝났어요.." : "D-${goal.period - goal.currentDays}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 17)), // 폰트 크기 감소 (14 -> 13)
+              const SizedBox(height: 4),
+              Text("${goal.frequency}", style: const TextStyle(fontSize: 15, color: Colors.grey))
             ],
           ),
 
@@ -731,19 +693,30 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
           // 하단 컨텐츠 (달성률, 인증 버튼)
           Column(
             children: [
-              const SizedBox(height: 15), // 여백 감소 (20 -> 15)
+              const SizedBox(height: 15),
               _buildAchievementBar(goal),
-              const SizedBox(height: 20), // 여백 감소 (25 -> 20)
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: canVerify ? () => _showImageSourceSheet(goal) : null,
+                  onPressed: () {
+                    if (canVerify) {
+                      _showImageSourceSheet(goal);
+                    } else {
+                      String msg = "";
+                      if (isFailed) msg = "이미 실패한 목표입니다... 🥀";
+                      else if (goal.temperature >= 100) msg = "이미 다 컸어요! 🎉";
+                      else msg = "오늘은 이미 인증했어요! 내일 또 만나요!";
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canVerify ? Colors.lightGreen : Colors.grey.shade300,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16), // 버튼 패딩 감소 (18 -> 16)
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
+                    elevation: canVerify ? 2 : 0,
                   ),
                   child: Text(
                       isFailed ? "실패한 목표" : (hasVerifiedToday ? "오늘 인증 완료" : "오늘의 인증 기록하기"),

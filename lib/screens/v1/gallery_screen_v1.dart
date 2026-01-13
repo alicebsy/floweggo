@@ -522,6 +522,16 @@ class _GalleryScreenV1State extends State<GalleryScreenV1> {
   }
 
   Widget _buildGoalAlbumCard(Goal goal) {
+    final now = DateTime.now();
+    DateTime startDate;
+    try {
+      startDate = DateTime.parse(goal.id); // goal.id에 저장된 생성일 파싱
+    } catch (e) {
+      startDate = DateTime.now();
+    }
+    final endDate = startDate.add(Duration(days: goal.period)); // 종료일 계산
+    final bool isFailed = now.isAfter(endDate) && goal.temperature < 100; // 기간 만료 및 미달성 체크
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -554,7 +564,8 @@ class _GalleryScreenV1State extends State<GalleryScreenV1> {
                         shape: BoxShape.circle,
                       ),
                       child: Text(
-                          goal.emoji, style: const TextStyle(fontSize: 28)),
+                          isFailed ? "🍳" : goal.emoji, // 🔥 [수정] 실패 시 후라이, 아니면 단계별 이모지 표시
+                          style: const TextStyle(fontSize: 28)),
                     ),
                     const SizedBox(width: 15),
                     Expanded(

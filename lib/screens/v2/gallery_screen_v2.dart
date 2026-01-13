@@ -441,6 +441,16 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
 
 
   Widget _buildLogCard(Goal goal) {
+    final now = DateTime.now();
+    DateTime startDate;
+    try {
+      startDate = DateTime.parse(goal.id); // 생성일 파싱
+    } catch (e) {
+      startDate = DateTime.now();
+    }
+    final endDate = startDate.add(Duration(days: goal.period)); // 종료일 계산
+    final bool isFailed = now.isAfter(endDate) && goal.temperature < 100; // 실패 여부 판단
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
@@ -454,7 +464,7 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
         children: [
           Row(
             children: [
-              Text(goal.emoji2, style: const TextStyle(fontSize: 24)),
+              Text(isFailed ? "🥀" : goal.emoji2, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

@@ -35,6 +35,37 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     });
   }
 
+  void _deleteGoal(String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("기록 삭제", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("이 성장 기록을 영구적으로 삭제하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("취소", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              db.deleteGoal(id);
+              setState(() {});
+              Navigator.pop(context);
+            },
+            child: const Text("삭제", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showNameDialog() {
     final controller = TextEditingController(text: _userName);
     showDialog(
@@ -95,17 +126,14 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            expandedHeight: 320,
-            pinned: false,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: EdgeInsets.zero,
-              background: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.only(top: 60, bottom: 30),
+              child:Column(
                 children: [
-                  const SizedBox(height: 50),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -140,37 +168,81 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
                         failed: failedGoals.length
                     ),
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
 
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            sliver: isFarmEmpty
-                ? SliverFillRemaining(hasScrollBody: false, child: _buildEmptyUI())
-                : SliverList(
-              delegate: SliverChildListDelegate([
-                // 🔥 [수정] 각 섹션에 맞는 전용 위젯 호출
-                if (growingGoals.isNotEmpty) ...[
-                   _buildSectionHeader("진행 중인 목표", growingGoals.length, Colors.green),
-                  ...growingGoals.reversed.map((g) => _buildGrowingCard(g)).toList(),
-                ],
-                if (successGoals.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  _buildSectionHeader("달성 완료 항목", successGoals.length, Colors.brown),
-                  ...successGoals.reversed.map((g) => _buildSuccessCard(g)).toList(),
-                ],
-                if (failedGoals.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  _buildSectionHeader("실패한 목표", failedGoals.length, Colors.redAccent),
-                  ...failedGoals.reversed.map((g) => _buildFailedCard(g)).toList(),
-                ],
-                const SizedBox(height: 40),
-              ]),
-            ),
-          ),
+          if (isFarmEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildEmptyUI(), // 중앙 정렬된 빈 화면 UI
+            )
+          else...[
+            // 🌱 진행 중인 목표 (SliverList)
+            if (growingGoals.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                sliver: SliverToBoxAdapter(child: _buildSectionHeader("진행 중인 목표", growingGoals.length, Colors.green)),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildGrowingCard(growingGoals.reversed.toList()[index]),
+                    childCount: growingGoals.length,
+                  ),
+                ),
+              ),
+            ],
+
+            // 🌹 성공한 목표 (SliverGrid - v1 방식)
+            if (successGoals.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                sliver: SliverToBoxAdapter(child: _buildSectionHeader("달성 완료 항목", successGoals.length, Colors.brown)),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.all(15),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildSuccessCard(successGoals.reversed.toList()[index]),
+                    childCount: successGoals.length,
+                  ),
+                ),
+              ),
+            ],
+
+            // 🥀 실패한 목표 (SliverGrid - v1 방식)
+            if (failedGoals.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                sliver: SliverToBoxAdapter(child: _buildSectionHeader("실패한 목표", failedGoals.length, Colors.redAccent)),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.all(15),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildFailedCard(failedGoals.reversed.toList()[index]),
+                    childCount: failedGoals.length,
+                  ),
+                ),
+              ),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          ]
         ],
       ),
     );
@@ -178,21 +250,28 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
 
   Widget _buildSummaryStats({required int growing, required int success, required int failed}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
         color: Colors.brown,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.blueAccent.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 8))],
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _statColumn("진행 중", "$growing", Colors.white),
-          _statColumn("성공", "$success", Colors.lightGreenAccent),
-          _statColumn("실패", "$failed", Colors.red[200]!),
+          _statColumn("진행 중", "$growing", Colors.green),
+          _buildVerticalDivider(),
+          _statColumn("성공", "$success", Colors.white),
+          _buildVerticalDivider(),
+          _statColumn("실패", "$failed", Colors.redAccent),
         ],
       ),
     );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(height: 30, width: 1, color: Colors.grey.shade100);
   }
 
   Widget _statColumn(String label, String value, Color valueColor) {
@@ -229,36 +308,45 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   Widget _buildGrowingCard(Goal goal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
-            alignment: Alignment.center,
-            child: Text(goal.emoji2, style: const TextStyle(fontSize: 28)),
+          Row(
+            children: [
+              Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
+                alignment: Alignment.center,
+                child: Text(goal.emoji2, style: const TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(goal.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                    const SizedBox(height: 4),
+                    Text("D-${goal.period - goal.currentDays} 남음", style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => _deleteGoal(goal.id),
+                icon: const Icon(Icons.more_horiz, color: Colors.black26),
+              )
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(goal.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                const SizedBox(height: 4),
-                Text("현재 달성률 ${(goal.progress * 100).toInt()}%", style: const TextStyle(color: Colors.black45, fontSize: 13)),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 36, height: 36,
-            child: CircularProgressIndicator(
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
               value: goal.progress,
-              strokeWidth: 4,
+              minHeight: 8,
               backgroundColor: Colors.grey.shade100,
               color: Colors.green,
             ),
@@ -271,8 +359,8 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   // 🔥 [신규] 성공한 목표 카드
   Widget _buildSuccessCard(Goal goal) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -280,33 +368,32 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
-            alignment: Alignment.center,
-            child: const Text("🌹", style: TextStyle(fontSize: 28)),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
+          const Text("🌹", style: TextStyle(fontSize: 25)),
+          const SizedBox(width: 15),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("목표 달성!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                SizedBox(height: 4),
-                Text("성공적으로 완수했습니다.", style: TextStyle(color: Colors.black45, fontSize: 13)),
+                Text(goal.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
+                const Text("성공!", style: TextStyle(fontSize: 11, color: Colors.brown)),
               ],
             ),
+          ),
+          GestureDetector(
+            onTap: () => _deleteGoal(goal.id),
+            child: const Icon(Icons.close, size: 18, color: Colors.black26),
           ),
         ],
       ),
     );
   }
-  
+
   // 🔥 [신규] 실패한 목표 카드
   Widget _buildFailedCard(Goal goal) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -314,22 +401,22 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
-            alignment: Alignment.center,
-            child: const Text("🥀", style: TextStyle(fontSize: 28)),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
+          const Text("🥀", style: TextStyle(fontSize: 25)),
+          const SizedBox(width: 15),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("기간 만료", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                SizedBox(height: 4),
-                Text("도전 기간이 만료되었습니다.", style: TextStyle(color: Colors.black45, fontSize: 13)),
-              ],
-            ),
+                Text(goal.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)
+                ),
+                const Text("실패...", style: TextStyle(fontSize: 11, color: Colors.redAccent)),
+              ]
+            )
+          ),
+          GestureDetector(
+            onTap: () => _deleteGoal(goal.id),
+            child: const Icon(Icons.close, size: 18, color: Colors.black26),
           ),
         ],
       ),
@@ -337,68 +424,17 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   }
 
   Widget _buildEmptyUI() {
-    const Color primaryBrown = Color(0xFF6D4C41);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 60),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 세련된 아웃라인 아이콘 구성
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.brown.withOpacity(0.05),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const Icon(
-                  Icons.agriculture_outlined, // 농기구 아이콘
-                  size: 48,
-                  color: Colors.black12,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "아직 가꾸고 있는 기록이 없어요",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "목표를 달성하거나 기간이 만료되면\n이곳에서 통계를 모아볼 수 있습니다.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black38,
-                height: 1.5,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 32),
-            // 은은한 텍스트 버튼 가이드 (선택 사항)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                "씨앗 탭에서 첫 발걸음을 떼보세요",
-                style: TextStyle(fontSize: 12, color: Colors.black45),
-              ),
-            ),
-          ],
-        ),
+    return Center( // SliverFillRemaining 내부에서 정중앙에 배치됨
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("🚜", style: TextStyle(fontSize: 50)),
+          const SizedBox(height: 20),
+          const Text("아직 가꾸고 있는 기록이 없어요", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87)),
+          const SizedBox(height: 8),
+          const Text("목표를 달성하거나 기간이 만료되면\n이곳에서 통계를 모아볼 수 있습니다.",
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.black38, height: 1.5)),
+        ],
       ),
     );
   }

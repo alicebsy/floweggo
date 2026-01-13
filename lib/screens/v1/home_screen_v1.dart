@@ -938,7 +938,7 @@ class _HomeScreenV1State extends State<HomeScreenV1> {
                                     ),
                                     Text(
                                       isFailed ? "기간이 끝났어요 😭"
-                                          : (goal.temperature >= 100 ? "내일 둥지를 떠나요 👋" : "(${goal.frequency})"),
+                                          : (goal.temperature >= 100 ? "내일 둥지를 떠나요 👋" : "${goal.frequency}"),
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(fontSize: 14, color: Colors.white70),
                                     ),

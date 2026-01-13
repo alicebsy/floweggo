@@ -31,7 +31,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   late ImageLabeler _imageLabeler;
 
   // 🔥 [주의] 실제 배포 시에는 API 키를 안전하게 관리해야 합니다.
-  final String _apiKey = 'AIzaSyDiLJyKKzD7nQOxJw24yE-6gK5FMZZEZ_A';
+  final String _apiKey = '';
 
   @override
   void initState() {
