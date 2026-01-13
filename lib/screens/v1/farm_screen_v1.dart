@@ -255,7 +255,7 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,       // 2열 배치 (성공 섹션과 동일)
-                          childAspectRatio: 2.2,   // 가로세로 비율 (성공 섹션과 동일)
+                          childAspectRatio: 1.8,   // 가로세로 비율 (성공 섹션과 동일)
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
@@ -425,7 +425,7 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                   style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, decorationColor: Colors.white12),
                 ),
                 const SizedBox(height: 2),
-                const Text("너무 뜨거웠나봐요..", style: TextStyle(fontSize: 10, color: Colors.white24)),
+                const Text("분발해야해요!", style: TextStyle(fontSize: 10, color: Colors.white24)),
               ],
             ),
           ),
