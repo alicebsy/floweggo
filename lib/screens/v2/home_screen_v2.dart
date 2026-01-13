@@ -635,8 +635,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     // 메인 블록이 화면에 잘 맞도록 마진과 패딩을 수정합니다.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 80), // 수직 마진 감소
-      padding: const EdgeInsets.all(30), // 패딩 감소
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 40), // 수직 마진 감소 (80 -> 30)
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -644,7 +644,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
       ),
       // SingleChildScrollView를 제거하고 Column으로 직접 내용을 배치합니다.
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // 위 아래로 컨텐츠를 분산시켜 꽉 채웁니다.
+        // mainAxisAlignment: MainAxisAlignment.spaceBetween, // 위 아래로 컨텐츠를 분산시켜 꽉 채웁니다. -> SizedBox로 간격 조절
         children: [
           // 상단 컨텐츠 (상태, 아이콘, 이모지, 제목)
           Column(
@@ -666,24 +666,27 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
                   ),
                 ],
               ),
-              const SizedBox(height: 15), // 여백 감소
+              const SizedBox(height: 50), // 여백 감소 (15 -> 10)
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(isFailed ? "🍂" : goal.emoji2, style: const TextStyle(fontSize: 90)), // 이모지 크기 약간 감소
+                child: Text(isFailed ? "🍂" : goal.emoji2, style: const TextStyle(fontSize: 80)), // 이모지 크기 감소 (90 -> 80)
               ),
-              const SizedBox(height: 10), // 여백 감소
-              Text(goal.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 약간 감소
-              const SizedBox(height: 6),
-              Text(isFailed ? "도전 기간이 끝났어요.." : "남은 기간: D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(color: Colors.grey, fontSize: 14)), // 폰트 크기 약간 감소
+              const SizedBox(height: 8), // 여백 감소 (10 -> 8)
+              Text(goal.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 감소 (24 -> 22)
+              const SizedBox(height: 4), // 여백 감소 (6 -> 4)
+              Text(isFailed ? "도전 기간이 끝났어요.." : "남은 기간: D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(color: Colors.grey, fontSize: 13)), // 폰트 크기 감소 (14 -> 13)
             ],
           ),
-          
+
+          // 상단과 하단 컨텐츠 사이의 간격을 조절합니다.
+          const Spacer(),
+
           // 하단 컨텐츠 (달성률, 인증 버튼)
           Column(
             children: [
-              const SizedBox(height: 20), // 여백 감소
+              const SizedBox(height: 15), // 여백 감소 (20 -> 15)
               _buildAchievementBar(goal),
-              const SizedBox(height: 25), // 여백 감소
+              const SizedBox(height: 20), // 여백 감소 (25 -> 20)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -691,7 +694,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canVerify ? Colors.lightGreen : Colors.grey.shade300,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18), // 버튼 패딩 약간 감소
+                    padding: const EdgeInsets.symmetric(vertical: 16), // 버튼 패딩 감소 (18 -> 16)
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
