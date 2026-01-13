@@ -67,12 +67,20 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     return DateTime.now().isAfter(endDate);
   }
 
+// 1일 1회 인증 제한 수정
   bool _isVerifiedToday(Goal goal) {
+    // 1. 기록이 없으면 당연히 인증 안 함
     if (goal.memories.isEmpty) return false;
-    final lastMemory = goal.memories.last;
-    String lastDateStr = lastMemory['date'] ?? "";
-    String todayStr = "${DateTime.now().month}월 ${DateTime.now().day}일";
-    return lastDateStr == todayStr;
+
+    // 2. 오늘 날짜를 "2026-01-13" 같은 형식으로 구함 (시간 제거)
+    String todayStr = DateTime.now().toString().split(' ')[0];
+
+    // 3. memories 리스트를 전부 뒤져서, 날짜 앞부분이 오늘과 같은 게 '하나라도' 있는지 확인 (.any)
+    return goal.memories.any((memory) {
+      // 저장된 날짜가 "2026-01-13 14:30"일 수도 있으니 앞부분만 자름
+      String memoryDate = memory['date'].toString().split(' ')[0];
+      return memoryDate == todayStr;
+    });
   }
 
   void _addEventToCalendar(Goal goal) {
@@ -552,27 +560,59 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     final String? resultDesc = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ImageCheckScreenV2(
-          imagePath: image.path,
-          goal: goal,
-        ),
+        builder: (context) =>
+            ImageCheckScreenV2(
+              imagePath: image.path,
+              goal: goal,
+            ),
       ),
     );
 
     if (resultDesc != null) {
       setState(() {
+        // 1. DB에 영구 저장
         int index = db.activeGoals.indexOf(goal);
         if (index != -1) {
           db.recordProgress(index, image.path, resultDesc);
         }
+
+        // -------------------------------------------------------------
+        // 🔥 [핵심 수정] UI가 즉시 반응하도록 강제 업데이트
+        // -------------------------------------------------------------
+        // 오늘 날짜 포맷 (YYYY-MM-DD)
+        String todayDate = DateTime.now().toString().split(' ')[0];
+
+        // 현재 화면에 있는 goal 객체의 memories 리스트에 방금 찍은 사진 정보를 즉시 추가합니다.
+        // 이렇게 하면 _isVerifiedToday() 함수가 바로 'true'를 반환하게 됩니다.
+        goal.memories.add({
+          'imagePath': image.path,
+          'description': resultDesc,
+          'date': todayDate, // 날짜 형식을 확실하게 지정
+        });
+
+        // 혹시라도 온도(진행률)도 바로 반영하고 싶다면:
+        goal.currentDays += 1; // 일수 증가 (필요 시)
+        goal.temperature = (goal.memories.length / goal.period) * 100;
+        // -------------------------------------------------------------
       });
 
-      if (goal.temperature >= 100) {
-        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-        _markAsCompleted(goal.id, today);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🎉 축하해! 드디어 꽃이 되었어!")));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("목표 달성이 기록되었습니다!")));
+      if (resultDesc != null) {
+        setState(() {
+          int index = db.activeGoals.indexOf(goal);
+          if (index != -1) {
+            db.recordProgress(index, image.path, resultDesc);
+          }
+        });
+
+        if (goal.temperature >= 100) {
+          final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+          _markAsCompleted(goal.id, today);
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("🎉 축하해! 드디어 꽃이 되었어!")));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("목표 달성이 기록되었습니다!")));
+        }
       }
     }
   }
@@ -622,9 +662,16 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
 
   // 🔥 카드 위젯 수정
   Widget _buildGoalCard(Goal goal, int index) {
-    bool isFailed = _isGoalFailed(goal);
+
     bool hasVerifiedToday = _isVerifiedToday(goal);
-    bool canVerify = !isFailed && !hasVerifiedToday && goal.temperature < 100;
+
+    bool isFailed = (goal.period - goal.currentDays) < 0 &&
+        ((goal.memories.length / goal.period) * 100) < 100;
+
+    bool canVerify = !isFailed && !hasVerifiedToday;
+    // -----------------------------------------------------------
+
+
 
     String stageText = "시작 단계";
     Color stageColor = Colors.blueGrey;
