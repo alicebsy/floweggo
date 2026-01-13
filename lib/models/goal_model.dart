@@ -59,13 +59,13 @@ class Goal {
   String get emoji2 {
     switch (status) {
       case GoalStatus.chicken:
-        return "🏵️";
+        return "🌹";
       case GoalStatus.chick:
         return "🌱";
       case GoalStatus.egg:
         return "🥜";
       case GoalStatus.fried:
-        return "🍂";
+        return "🥀";
     }
   }
 

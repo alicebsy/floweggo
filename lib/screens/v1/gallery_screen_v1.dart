@@ -504,7 +504,7 @@ class _GalleryScreenV1State extends State<GalleryScreenV1> {
 
   Widget _buildEmptyView() {
     String message = _searchText.isNotEmpty
-        ? "검색된 알이 없닭! 🧐"
+        ? "검색된 알이 없닭! "
         : "아직 입양한 알이 없닭!\n인큐베이터에서 알을 입양해주세요.";
     return Container(
       width: double.infinity,
@@ -512,7 +512,7 @@ class _GalleryScreenV1State extends State<GalleryScreenV1> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("🥚", style: TextStyle(fontSize: 60)),
+          const Text("🧐", style: TextStyle(fontSize: 60)),
           const SizedBox(height: 20),
           Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.5)),
           const SizedBox(height: 50),

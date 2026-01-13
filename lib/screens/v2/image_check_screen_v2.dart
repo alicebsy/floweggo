@@ -32,7 +32,7 @@ class ImageCheckScreenV2State extends State<ImageCheckScreenV2> {
 
   // 중요: 실제 앱에서는 API 키를 코드에 직접 노출하면 안 됩니다.
   // 이 키는 예시이며, 실제 키로 교체하고 안전한 방식으로 관리해야 합니다.
-  final String _apiKey = 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM';
+  final String _apiKey = 'AIzaSyDiLJyKKzD7nQOxJw24yE-6gK5FMZZEZ_A';
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class ImageCheckScreenV2State extends State<ImageCheckScreenV2> {
   // Gemini API를 사용하여 연관성을 확인하는 함수
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
     // Gemini API 키가 설정되지 않은 경우, 에러를 방지하고 사용자에게 입력을 요구하도록 기본값(false) 반환
-    if (_apiKey != 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM') {
+    if (_apiKey != 'AIzaSyDiLJyKKzD7nQOxJw24yE-6gK5FMZZEZ_A') {
       print("경고: Gemini API 키가 설정되지 않았습니다. 기본값인 '연관 없음'으로 처리합니다.");
       return false;
     }
@@ -143,7 +143,7 @@ class ImageCheckScreenV2State extends State<ImageCheckScreenV2> {
     // 3. 연관성이 있으면 자동으로 등록하고 화면 닫기
     if (isGeminiRelated) {
       if (!mounted) return;
-      Navigator.pop(context, 'AI가 목표 달성을 확인했닭! ✨'); // 자동 등록을 위해 빈 설명 반환
+      Navigator.pop(context, 'AI가 목표 달성을 확인했어요 ✨'); // 자동 등록을 위해 빈 설명 반환
     }
   }
 

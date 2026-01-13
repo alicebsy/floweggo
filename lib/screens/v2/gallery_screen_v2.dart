@@ -17,6 +17,38 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
   final TextEditingController _searchController = TextEditingController();
   String _searchText = "";
 
+  // --- [추가] 1번 기능: 목표 삭제 로직 ---
+  void _deleteGoal(String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("기록 삭제", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("이 성장 기록을 영구적으로 삭제하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("취소", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              db.deleteGoal(id); // DB에서 삭제
+              setState(() {});    // UI 갱신
+              Navigator.pop(context);
+            },
+            child: const Text("삭제", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 0: 목록 보기, 1: 잔디 보기
   int _selectedIndex = 0;
 
@@ -44,19 +76,10 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // 1. 헤더 (AppBar)
-          SliverAppBar(
-            floating: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            title: const Text("활동 기록 로그", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20)),
-            centerTitle: false,
-          ),
-
           // 2. 검색창
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 8),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
@@ -320,9 +343,19 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 30),
-        Text(
-          "${date.month}월 ${date.day}일의 기록",
-          style: const TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            const Icon(Icons.calendar_today_rounded, color: Colors.black54, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              "${date.month}월 ${date.day}일의 기록",
+              style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 15),
 
@@ -432,6 +465,25 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
                   ],
                 ),
               ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_horiz, color: Colors.black26),
+                onSelected: (value) {
+                  if (value == 'delete') _deleteGoal(goal.id);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                        SizedBox(width: 10),
+                        Text('앨범 삭제', style: TextStyle(color: Colors.redAccent, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          const SizedBox(height: 20),
             ],
           ),
           const SizedBox(height: 20),
@@ -454,17 +506,59 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
             ),
             itemBuilder: (context, idx) {
               final memory = goal.memories[idx];
+              final String imagePath = memory['imagePath']?.toString() ?? "";
+              final String date = memory['date']?.toString() ?? "";
+              final String description = memory['description']?.toString() ?? "";
+
               return GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PhotoDetailScreen(
-                  imagePath: memory['imagePath']!,
-                  date: memory['date']!,
-                  description: memory['description'] ?? "",
+                  imagePath: imagePath,
+                  date: date,
+                  description: description,
                 ))),
                 child: Hero(
-                  tag: memory['imagePath']!,
+                  tag: imagePath,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(File(memory['imagePath']!), fit: BoxFit.cover),
+                    child: Stack( // --- [수정] 날짜 표시를 위해 Stack 사용 ---
+                      fit: StackFit.expand,
+                      children: [
+                        Image.file(
+                          File(imagePath),
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Container(
+                            color: Colors.grey.shade100,
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        ),
+                        // --- [추가] 썸네일 하단 날짜 표시 (Positioned) ---
+                        Positioned(
+                          bottom: 0, left: 0, right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withOpacity(0.5),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              date,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -476,8 +570,21 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
   }
 
   Widget _buildEmptyView() {
-    return const Center(
-      child: Text("일치하는 기록이 없습니다.", style: TextStyle(color: Colors.black26, fontSize: 16, fontWeight: FontWeight.w500)),
+    String message = _searchText.isNotEmpty
+        ? "검색된 씨앗이 없어요! "
+        : "아직 심은 씨앗이 없어요!\n텃밭에서 씨앗을 심어주세요.";
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text("🧐", style: TextStyle(fontSize: 60)),
+          const SizedBox(height: 20),
+          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold, height: 1.5)),
+          const SizedBox(height: 50),
+        ],
+      ),
     );
   }
 }

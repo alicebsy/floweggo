@@ -494,7 +494,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
 
   void _showImageSourceSheet(Goal goal) {
     if (_isGoalFailed(goal)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("이미 실패한 목표입니다... 🍂")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("이미 실패한 목표입니다... 🥀")));
       return;
     }
 
@@ -716,7 +716,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
               const SizedBox(height: 50), // 여백 감소 (15 -> 10)
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(isFailed ? "🍂" : goal.emoji2, style: const TextStyle(fontSize: 80)), // 이모지 크기 감소 (90 -> 80)
+                child: Text(isFailed ? "🥀" : goal.emoji2, style: const TextStyle(fontSize: 80)), // 이모지 크기 감소 (90 -> 80)
               ),
               const SizedBox(height: 8), // 여백 감소 (10 -> 8)
               Text(goal.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 감소 (24 -> 22)
@@ -793,20 +793,96 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
   }
 
   Widget _buildEmptyUI() {
+    const Color primaryBrown = Color(0xFF6D4C41); // 흙/나무 색상
+    const Color accentColor = Color(0xFF66BB6A);
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.assignment_outlined, size: 80, color: Colors.black12),
-          const SizedBox(height: 20),
-          const Text("현재 진행 중인 목표가 없습니다.\n새로운 목표를 설정해보세요.", textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5)),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: _showAddGoalDialog,
-            style: ElevatedButton.styleFrom(backgroundColor: Color(0XFF6E9041), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text("+ 새로운 씨앗 심기"),
-          ),
-        ],
+      child: Container(
+        // v1처럼 중앙에 집중된 큰 프레임 구성
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(40), // v2의 둥근 디자인 강조
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
+            )
+          ],
+          // 은은한 연두색 테두리로 포인트
+          border: Border.all(color: accentColor.withOpacity(0.1), width: 2),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 1. 메인 아이콘/이모지 영역
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Text("🌻", style: TextStyle(fontSize: 70)), // v1의 🛖 대신 🪴 사용
+            ),
+            const SizedBox(height: 35),
+
+            // 2. 타이틀 텍스트
+            const Text(
+              "텃밭이 비어있어요!",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: primaryBrown,
+                letterSpacing: -0.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 3. 서브 텍스트
+            Text(
+              "새로운 씨앗을 심어서\n정성껏 길러주세요",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: primaryBrown.withOpacity(0.5),
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 45),
+
+            // 4. 씨앗 심기 버튼 (v2의 버튼 스타일 유지)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _showAddGoalDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBrown,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 5,
+                  shadowColor: primaryBrown.withOpacity(0.3),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_rounded, size: 22),
+                    SizedBox(width: 8),
+                    Text(
+                      "+ 새로운 씨앗 심기",
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

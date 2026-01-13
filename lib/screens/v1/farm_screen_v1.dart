@@ -267,22 +267,54 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                     ],
 
                     // 4. 텅 비었을 때
-                    if (allGoals.isEmpty)
+                    if (allGoals.isEmpty)...[
                       Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 50),
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 40),
+                          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05), // 아주 연한 유리 효과
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          ),
                           child: Column(
-                            children: const [
-                              Icon(Icons.inbox, size: 50, color: Colors.white24),
-                              SizedBox(height: 15),
-                              Text("기록된 목표가 없어요.", style: TextStyle(color: Colors.white38)),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 반투명한 원형 배경 위의 이모지
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                shape: BoxShape.circle,
+                                ),
+                              child: const Text("🏚️", style: TextStyle(fontSize: 50)),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                "농장이 아직 고요하닭...",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "인큐베이터에서 알을 깨워\n이곳 농장을 북적이게 만들어주세요!",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 13,
+                                  height: 1.5,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-
-                    const SizedBox(height: 50),
-                  ],
+                    ],
+                  ]
                 ),
               ),
             ),

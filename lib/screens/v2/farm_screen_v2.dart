@@ -122,7 +122,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "$_userName님",
+                          "$_userName",
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -284,7 +284,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
             width: 52, height: 52,
             decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
             alignment: Alignment.center,
-            child: const Text("🏵️", style: TextStyle(fontSize: 28)),
+            child: const Text("🌹", style: TextStyle(fontSize: 28)),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -337,14 +337,68 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   }
 
   Widget _buildEmptyUI() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.analytics_outlined, size: 64, color: Colors.black12),
-          const SizedBox(height: 16),
-          Text("기록된 데이터가 없습니다.", style: TextStyle(color: Colors.black26, fontSize: 16, fontWeight: FontWeight.w500)),
-        ],
+    const Color primaryBrown = Color(0xFF6D4C41);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 60),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 세련된 아웃라인 아이콘 구성
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.brown.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const Icon(
+                  Icons.agriculture_outlined, // 농기구 아이콘
+                  size: 48,
+                  color: Colors.black12,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "아직 가꾸고 있는 기록이 없어요",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "목표를 달성하거나 기간이 만료되면\n이곳에서 통계를 모아볼 수 있습니다.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black38,
+                height: 1.5,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 32),
+            // 은은한 텍스트 버튼 가이드 (선택 사항)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                "씨앗 탭에서 첫 발걸음을 떼보세요",
+                style: TextStyle(fontSize: 12, color: Colors.black45),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

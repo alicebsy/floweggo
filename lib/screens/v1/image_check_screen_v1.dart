@@ -52,7 +52,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   // 🤖 Gemini API 호출 함수 (디버깅 로그 추가됨)
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
     // 1. API 키 확인
-    if (_apiKey != 'AIzaSyDiLJyKKzD7nQOxJw24yE-6gK5FMZZEZ_A') {
+    if (_apiKey != '') {
       print("🚨 [ERROR] 예시 API 키가 사용되었습니다. 본인의 키로 교체해주세요!");
       return false;
     }
