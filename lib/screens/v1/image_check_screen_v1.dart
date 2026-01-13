@@ -31,7 +31,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   late ImageLabeler _imageLabeler;
 
   // 🔥 [주의] 실제 배포 시에는 API 키를 안전하게 관리해야 합니다.
-  final String _apiKey = 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM';
+  final String _apiKey = '';
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   // 🤖 Gemini API 호출 함수 (디버깅 로그 추가됨)
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
     // 1. API 키 확인
-    if (_apiKey != 'AIzaSyBaeCUmZ6XOiErbzcoNCwBu2Pi-LF3m4WM') {
+    if (_apiKey != '') {
       print("🚨 [ERROR] 예시 API 키가 사용되었습니다. 본인의 키로 교체해주세요!");
       return false;
     }
