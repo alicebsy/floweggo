@@ -788,7 +788,7 @@ class _HomeScreenV1State extends State<HomeScreenV1> {
 
                           // 상태 확인
                           bool isFailed = _isGoalFailed(goal);
-                          bool hasVerifiedToday = _isVerifiedToday(goal);
+                          bool hasVerifiedToday = goal.isTodayDone;
                           bool isCompletedToday = (_completionDates[goal.id] == todayStr);
 
                           // 버튼 활성화 로직

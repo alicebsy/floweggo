@@ -11,6 +11,7 @@ class Goal {
   // Dynamic 으로 자료형 변경
   List<Map<String, dynamic>> memories;
 
+  // 상태를 수동으로 설정할 때 사용할 변수
   GoalStatus? _manualStatus;
 
   Goal({
@@ -26,10 +27,12 @@ class Goal {
 
   double get progress => currentDays / period;
 
+  // 🔥 [Setter 추가] 외부에서 goal.status = ... 로 값을 넣을 수 있게 함
   set status(GoalStatus value) {
     _manualStatus = value;
   }
 
+  // 🔥 [Getter 수정] 수동 설정값이 있으면 그걸 쓰고, 없으면 자동 계산
   GoalStatus get status {
     if (_manualStatus != null) {
       return _manualStatus!;
