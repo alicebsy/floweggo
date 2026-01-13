@@ -12,7 +12,7 @@ import 'screens/v2/farm_screen_v2.dart';
 import 'screens/v2/gallery_screen_v2.dart';
 
 // 테마 상태를 관리하는 전역 노티파이어
-final ValueNotifier<bool> isModernTheme = ValueNotifier<bool>(true);
+final ValueNotifier<bool> isModernTheme = ValueNotifier<bool>(false);
 
 void main() => runApp(const CozyFarmApp());
 
@@ -81,14 +81,13 @@ class _MainNavigationState extends State<MainNavigation> {
           body: pages[_index],
 
           // 테마 전환용 플로팅 버튼
-          floatingActionButton: FloatingActionButton.small(
+          floatingActionButton: _index == 2
+              ? FloatingActionButton.small(
             onPressed: () => isModernTheme.value = !isModernTheme.value,
-            backgroundColor: isModern ? Colors.brown : Colors.brown,
-            child: Icon(
-                isModern ? Icons.history : Icons.history,
-                color: Colors.white
-            ),
-          ),
+            backgroundColor: Colors.brown,
+            child: const Icon(Icons.history, color: Colors.white),
+          )
+              : null,
 
           // 테마에 따른 내비게이션 바 분기
           bottomNavigationBar: isModern ? _buildModernNav() : _buildClassicNav(),
@@ -125,7 +124,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // Version 1: 커스텀 그라데이션이 적용된 클래식 내비게이션 바
   Widget _buildClassicNav() => Container(
-    height: 85,
+    height: 80,
     decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
@@ -200,7 +199,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           const SizedBox(height: 4),
           Text(
-            label, 
+            label,
             style: TextStyle(
               color: isSelected ? activeColor : inactiveColor,
               fontSize: 11,
