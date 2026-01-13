@@ -80,8 +80,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     DateTime endDate = startDate.add(Duration(days: goal.period));
 
     final Event event = Event(
-      title: "🐣 ${goal.name}",
-      description: "목표: ${goal.name}\n주기: ${goal.frequency}\n꾸준히 인증해서 닭으로 키워보자!",
+      title: "🌱 ${goal.name}",
+      description: "목표: ${goal.name}\n주기: ${goal.frequency}\n꾸준히 인증해서 꽃으로 키워봐요!",
       startDate: startDate,
       endDate: endDate,
       allDay: true,
@@ -89,7 +89,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
 
     Add2Calendar.addEvent2Cal(event).then((success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(success ? "캘린더에 등록되었닭! 📅" : "등록 실패했닭... 권한을 확인해줘!")),
+        SnackBar(content: Text(success ? "캘린더에 등록되었어요! 📅" : "등록 실패했어요... 권한을 확인해주세요!")),
       );
     });
   }
@@ -99,73 +99,197 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     final periodController = TextEditingController(text: "30");
     String selectedFreq = "매일";
 
+    // ✨ [색상 변경] 새싹 테마 (Green & Brown)
+    const Color primaryBrown = Color(0xFF6D4C41); // 흙 색깔 (조금 더 진한 갈색)
+    const Color accentColor = Color(0xFF66BB6A);  // 포인트: 싱그러운 연두색 (Green 400)
+    const Color softBase = Color(0xFFF1F8E9);     // 배경: 아주 연한 연두빛 화이트 (Light Green 50)
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setST) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("새 목표 추가", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: "실천할 목표 입력",
-                    filled: true,
-                    fillColor: Colors.blue.shade50.withOpacity(0.3),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        builder: (context, setST) {
+
+          // 🌿 칩 버튼 (선택 시 연두색)
+          Widget buildFreqChip(String label, String value) {
+            bool isSelected = selectedFreq == value;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setST(() => selectedFreq = value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? accentColor : softBase, // 선택 안되면 연한 배경
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: accentColor.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))]
+                        : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                  ),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : primaryBrown.withOpacity(0.6),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: periodController,
-                  decoration: InputDecoration(
-                    labelText: "목표 기간 (일)",
-                    filled: true,
-                    fillColor: Colors.blue.shade50.withOpacity(0.3),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                const Align(alignment: Alignment.centerLeft, child: Text("실천 빈도", style: TextStyle(fontSize: 12, color: Colors.blueGrey))),
-                DropdownButton<String>(
-                  value: selectedFreq,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  items: ["매일", "격일", "주 3회"].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
-                  onChanged: (v) => setST(() => selectedFreq = v!),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  setState(() {
-                    db.addGoal(Goal(
-                      id: DateTime.now().toIso8601String(),
-                      name: nameController.text,
-                      period: int.parse(periodController.text),
-                      frequency: selectedFreq,
-                    ));
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("추가하기"),
+            );
+          }
+
+          // 🌿 입력창 스타일 (연두색 포커스)
+          InputDecoration inputDecoration(String hint, IconData icon, {String? suffix}) {
+            return InputDecoration(
+              filled: true,
+              fillColor: softBase, // 배경색
+              prefixIcon: Icon(icon, color: accentColor), // 아이콘 색상
+              hintText: hint,
+              hintStyle: TextStyle(color: primaryBrown.withOpacity(0.4)),
+              suffixText: suffix,
+              suffixStyle: const TextStyle(color: primaryBrown, fontWeight: FontWeight.bold),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: accentColor, width: 1.5), // 포커스 시 연두색 테두리
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            );
+          }
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 25),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(25, 35, 25, 25),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(35),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 25, spreadRadius: 2, offset: const Offset(0, 10)),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. 상단 아이콘 (연두빛 배경)
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.15), // 연한 연두색 원
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text("🌱", style: TextStyle(fontSize: 55)),
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "새로운 씨앗 심기",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: primaryBrown),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "무럭무럭 자라날 목표를 정해주세요!",
+                      style: TextStyle(fontSize: 13, color: primaryBrown.withOpacity(0.6)),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // 2. 목표 이름 입력
+                    TextField(
+                      controller: nameController,
+                      cursorColor: accentColor,
+                      style: const TextStyle(color: primaryBrown, fontWeight: FontWeight.w600),
+                      decoration: inputDecoration("목표 이름 (예: 매일 독서하기)", Icons.edit_rounded),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // 3. 기간 입력
+                    TextField(
+                      controller: periodController,
+                      keyboardType: TextInputType.number,
+                      cursorColor: accentColor,
+                      style: const TextStyle(color: primaryBrown, fontWeight: FontWeight.w600),
+                      decoration: inputDecoration("목표 기간", Icons.calendar_month_rounded, suffix: "일 동안"),
+                    ),
+                    const SizedBox(height: 25),
+
+                    // 4. 빈도 선택
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10, bottom: 12),
+                        child: Text("물 주기 빈도 (인증 주기)", style: TextStyle(fontWeight: FontWeight.w700, color: primaryBrown.withOpacity(0.8))),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        buildFreqChip("매일", "매일"),
+                        buildFreqChip("격일", "격일"),
+                        buildFreqChip("주 3회", "주 3회"),
+                      ],
+                    ),
+                    const SizedBox(height: 35),
+
+                    // 5. 하단 버튼
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              foregroundColor: primaryBrown.withOpacity(0.6),
+                            ),
+                            child: const Text("다음에 할래요", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (nameController.text.isNotEmpty) {
+                                setState(() {
+                                  db.addGoal(Goal(
+                                    id: DateTime.now().toIso8601String(),
+                                    name: nameController.text,
+                                    period: int.parse(periodController.text),
+                                    frequency: selectedFreq,
+                                  ));
+                                });
+                                // 페이지 이동 애니메이션
+                                Future.delayed(const Duration(milliseconds: 300), () {
+                                  if (_pageController.hasClients) {
+                                    _pageController.animateToPage(0, duration: const Duration(milliseconds: 600), curve: Curves.easeOutQuart);
+                                  }
+                                });
+                                Navigator.pop(context);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryBrown, // 버튼은 갈색 (안정감)
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 3,
+                              shadowColor: primaryBrown.withOpacity(0.3),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            child: const Text("심기 완료! 🌱", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -175,106 +299,247 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     final periodController = TextEditingController(text: goal.period.toString());
     String selectedFreq = goal.frequency;
 
+    const Color primaryBrown = Color(0xFF6D4C41); // 흙 색깔 (조금 더 진한 갈색)
+    const Color accentColor = Color(0xFF66BB6A);  // 포인트: 싱그러운 연두색 (Green 400)
+    const Color softBase = Color(0xFFF1F8E9);     // 배경: 아주 연한 연두빛 화이트 (Light Green 50)
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setST) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("목표 수정", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: "목표 이름",
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        builder: (context, setST) {
+
+          // 🌿 칩 버튼
+          Widget buildFreqChip(String label, String value) {
+            bool isSelected = selectedFreq == value;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setST(() => selectedFreq = value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? accentColor : softBase,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: accentColor.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))]
+                        : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                  ),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : primaryBrown.withOpacity(0.6),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: periodController,
-                  decoration: InputDecoration(
-                    labelText: "목표 기간 (일)",
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 16),
-                DropdownButton<String>(
-                  value: ["매일", "격일", "주 3회"].contains(selectedFreq) ? selectedFreq : "매일",
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  items: ["매일", "격일", "주 3회"].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
-                  onChanged: (v) => setST(() => selectedFreq = v!),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  goal.name = nameController.text;
-                  goal.period = int.parse(periodController.text);
-                  goal.frequency = selectedFreq;
-                  goal.temperature = (goal.currentDays / goal.period) * 100;
-                });
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
               ),
-              child: const Text("수정 완료"),
+            );
+          }
+
+          // 🌿 입력창 스타일
+          InputDecoration inputDecoration(String hint, IconData icon, {String? suffix}) {
+            return InputDecoration(
+              filled: true,
+              fillColor: softBase,
+              prefixIcon: Icon(icon, color: accentColor),
+              hintText: hint,
+              hintStyle: TextStyle(color: primaryBrown.withOpacity(0.4)),
+              suffixText: suffix,
+              suffixStyle: const TextStyle(color: primaryBrown, fontWeight: FontWeight.bold),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: accentColor, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            );
+          }
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 25),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(25, 35, 25, 25),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(35),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 25, spreadRadius: 2, offset: const Offset(0, 10)),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. 상단 아이콘 (수정 모드라 연필 아이콘 ✏️)
+                    Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.edit_note_rounded, size: 50, color: accentColor),
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "목표 수정하기",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: primaryBrown),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "내용을 변경할까요?",
+                      style: TextStyle(fontSize: 13, color: primaryBrown.withOpacity(0.6)),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // 2. 목표 이름 입력
+                    TextField(
+                      controller: nameController,
+                      cursorColor: accentColor,
+                      style: const TextStyle(color: primaryBrown, fontWeight: FontWeight.w600),
+                      decoration: inputDecoration("목표 이름", Icons.edit_rounded),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // 3. 기간 입력
+                    TextField(
+                      controller: periodController,
+                      keyboardType: TextInputType.number,
+                      cursorColor: accentColor,
+                      style: const TextStyle(color: primaryBrown, fontWeight: FontWeight.w600),
+                      decoration: inputDecoration("목표 기간", Icons.calendar_month_rounded, suffix: "일 동안"),
+                    ),
+                    const SizedBox(height: 25),
+
+                    // 4. 빈도 선택
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10, bottom: 12),
+                        child: Text("온도 높이기 빈도 (인증 주기)", style: TextStyle(fontWeight: FontWeight.w700, color: primaryBrown.withOpacity(0.8))),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        buildFreqChip("매일", "매일"),
+                        buildFreqChip("격일", "격일"),
+                        buildFreqChip("주 3회", "주 3회"),
+                      ],
+                    ),
+                    const SizedBox(height: 35),
+
+                    // 5. 하단 버튼
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              foregroundColor: primaryBrown.withOpacity(0.6),
+                            ),
+                            child: const Text("취소", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                goal.name = nameController.text;
+                                goal.period = int.parse(periodController.text);
+                                goal.frequency = selectedFreq;
+                                // 기간이 바뀌면 온도 재계산 (진행률 유지)
+                                goal.temperature = (goal.currentDays / goal.period) * 100;
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryBrown,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 3,
+                              shadowColor: primaryBrown.withOpacity(0.3),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            child: const Text("수정 완료 👌", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   void _showImageSourceSheet(Goal goal) {
     if (_isGoalFailed(goal)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("이미 실패한 목표닭... 🍳")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("이미 실패한 목표입니다... 🍂")));
       return;
     }
 
     if (_isVerifiedToday(goal)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("오늘은 이미 인증을 완료했닭!")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("오늘은 이미 인증을 완료했습니다!")));
       return;
     }
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 24),
-            const Text("인증 방식 선택", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 12),
-            ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.camera_alt_outlined, color: Colors.blueAccent)),
-              title: const Text("카메라 촬영"),
-              onTap: () { Navigator.pop(context); _handleAuth(goal, ImageSource.camera); },
-            ),
-            ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0xFFE3F2FD), child: Icon(Icons.photo_library_outlined, color: Colors.blueAccent)),
-              title: const Text("갤러리에서 선택"),
-              onTap: () { Navigator.pop(context); _handleAuth(goal, ImageSource.gallery); },
-            ),
-            const SizedBox(height: 20),
-          ],
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 20),
+              const Text("인증 방법을 선택해주세요!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAuthOption(Icons.camera_alt, "카메라", () { Navigator.pop(context); _handleAuth(goal, ImageSource.camera); }),
+                  _buildAuthOption(Icons.photo_library, "갤러리", () { Navigator.pop(context); _handleAuth(goal, ImageSource.gallery); }),
+                ],
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthOption(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(color: Colors.brown.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, size: 30, color: Colors.brown),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }
@@ -305,7 +570,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
       if (goal.temperature >= 100) {
         final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
         _markAsCompleted(goal.id, today);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🎉 축하한닭! 드디어 닭이 되었어!")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🎉 축하해! 드디어 꽃이 되었어!")));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("목표 달성이 기록되었습니다!")));
       }
@@ -326,10 +591,6 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     return Scaffold(
       backgroundColor: Colors.grey[50], // 배경색을 흰색 계열로 변경
       appBar: AppBar(
-        title: const Text("진행 중인 목표", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: [
           IconButton(onPressed: _showAddGoalDialog, icon: const Icon(Icons.add_circle_outline_rounded, size: 28)),
           const SizedBox(width: 12),
@@ -374,8 +635,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
     // 메인 블록이 화면에 잘 맞도록 마진과 패딩을 수정합니다.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 25), // 수직 마진 감소
-      padding: const EdgeInsets.all(24), // 패딩 감소
+      margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 80), // 수직 마진 감소
+      padding: const EdgeInsets.all(30), // 패딩 감소
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -408,12 +669,12 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
               const SizedBox(height: 15), // 여백 감소
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(isFailed ? "🍳" : goal.emoji, style: const TextStyle(fontSize: 90)), // 이모지 크기 약간 감소
+                child: Text(isFailed ? "🍂" : goal.emoji2, style: const TextStyle(fontSize: 90)), // 이모지 크기 약간 감소
               ),
               const SizedBox(height: 10), // 여백 감소
               Text(goal.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5), textAlign: TextAlign.center), // 폰트 크기 약간 감소
               const SizedBox(height: 6),
-              Text(isFailed ? "도전 기간이 끝났닭.." : "남은 기간: D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(color: Colors.grey, fontSize: 14)), // 폰트 크기 약간 감소
+              Text(isFailed ? "도전 기간이 끝났어요.." : "남은 기간: D-${goal.period - goal.currentDays} (${goal.frequency})", style: const TextStyle(color: Colors.grey, fontSize: 14)), // 폰트 크기 약간 감소
             ],
           ),
           
@@ -428,7 +689,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
                 child: ElevatedButton(
                   onPressed: canVerify ? () => _showImageSourceSheet(goal) : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: canVerify ? Colors.blueAccent : Colors.grey.shade300,
+                    backgroundColor: canVerify ? Colors.lightGreen : Colors.grey.shade300,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18), // 버튼 패딩 약간 감소
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -453,8 +714,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text("전체 달성률", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black54)),
-            Text("${(goal.progress * 100).toInt()}%", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent, fontSize: 17)),
+            const Text("물 주기 달성률", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black54)),
+            Text("${(goal.progress * 100).toInt()}%", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.lightGreen, fontSize: 17)),
           ],
         ),
         const SizedBox(height: 12),
@@ -463,8 +724,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
           child: LinearProgressIndicator(
             value: goal.progress,
             minHeight: 12,
-            backgroundColor: Colors.blue.shade50,
-            color: Colors.blueAccent,
+            backgroundColor: Colors.lightGreenAccent.shade100,
+            color: Colors.green,
           ),
         ),
       ],
@@ -492,8 +753,8 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: _showAddGoalDialog,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text("목표 추가하기"),
+            style: ElevatedButton.styleFrom(backgroundColor: Color(0XFF6E9041), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: const Text("+ 새로운 씨앗 심기"),
           ),
         ],
       ),

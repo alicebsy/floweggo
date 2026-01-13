@@ -12,7 +12,7 @@ class FarmScreenV2 extends StatefulWidget {
 
 class _FarmScreenV2State extends State<FarmScreenV2> {
   final db = DbHelper();
-  String _userName = "사용자";
+  String _userName = "농부";
 
   @override
   void initState() {
@@ -23,7 +23,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userName = prefs.getString('user_name') ?? "사용자";
+      _userName = prefs.getString('user_name') ?? "농부";
     });
   }
 
@@ -37,36 +37,32 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
 
   void _showNameDialog() {
     final controller = TextEditingController(text: _userName);
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("사용자 이름 설정", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text("이름 변경"),
         content: TextField(
           controller: controller,
-          decoration: InputDecoration(
+          cursorColor: Colors.blueAccent,
+          decoration: const InputDecoration(
             hintText: "이름을 입력하세요",
             filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            fillColor: Color(0xFFF0F4F8),
+            border: InputBorder.none,
           ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
                 _saveUserName(controller.text);
                 Navigator.pop(context);
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text("저장"),
+            child: const Text("확인", style: TextStyle(color: Colors.blueAccent)),
           ),
         ],
       ),
@@ -75,51 +71,102 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
 
   @override
   Widget build(BuildContext context) {
-    bool isFarmEmpty = db.completedFarm.isEmpty && db.activeGoals.isEmpty;
+    final allGoals = db.allGoals;
+    final now = DateTime.now();
+
+    final successGoals = allGoals.where((goal) => goal.temperature >= 100).toList();
+    final growingGoals = allGoals.where((goal) {
+      if (goal.temperature >= 100) return false;
+      DateTime start; 
+      try { start = DateTime.parse(goal.id); } catch(e) { start = DateTime.now(); }
+      DateTime end = start.add(Duration(days: goal.period));
+      return now.isBefore(end) || now.isAtSameMomentAs(end);
+    }).toList();
+    final failedGoals = allGoals.where((goal) {
+      if (goal.temperature >= 100) return false;
+      DateTime start; 
+      try { start = DateTime.parse(goal.id); } catch(e) { start = DateTime.now(); }
+      DateTime end = start.add(Duration(days: goal.period));
+      return now.isAfter(end);
+    }).toList();
+
+    bool isFarmEmpty = growingGoals.isEmpty && successGoals.isEmpty && failedGoals.isEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
+          SliverAppBar(
             backgroundColor: Colors.white,
-            title: GestureDetector(
-              onTap: _showNameDialog,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+            expandedHeight: 320,
+            pinned: false,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: EdgeInsets.zero,
+              background: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Flexible(
-                    child: Text(
-                      "$_userName님의 목표 대시보드",
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 50),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade200, width: 2),
+                      color: Colors.white,
+                    ),
+                    child: const Text("👨🏻‍🌾", style: TextStyle(fontSize: 40)),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: _showNameDialog,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "$_userName님",
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.edit_outlined, size: 20, color: Colors.black38),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.edit_outlined, size: 20, color: Colors.black26),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: _buildSummaryStats(
+                        growing: growingGoals.length,
+                        success: successGoals.length,
+                        failed: failedGoals.length
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
-            centerTitle: false,
           ),
 
           SliverPadding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             sliver: isFarmEmpty
                 ? SliverFillRemaining(hasScrollBody: false, child: _buildEmptyUI())
                 : SliverList(
               delegate: SliverChildListDelegate([
-                _buildSummaryStats(),
-                const SizedBox(height: 32),
-
-                _buildSectionHeader("진행 중인 목표", db.activeGoals.length, Colors.blueAccent),
-                ...db.activeGoals.map((g) => _buildGoalItem(g, false)).toList(),
-
-                const SizedBox(height: 32),
-
-                _buildSectionHeader("달성 완료 항목", db.completedFarm.length, Colors.green),
-                ...db.completedFarm.map((g) => _buildGoalItem(g, true)).toList(),
-
+                // 🔥 [수정] 각 섹션에 맞는 전용 위젯 호출
+                if (growingGoals.isNotEmpty) ...[
+                   _buildSectionHeader("진행 중인 목표", growingGoals.length, Colors.green),
+                  ...growingGoals.reversed.map((g) => _buildGrowingCard(g)).toList(),
+                ],
+                if (successGoals.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  _buildSectionHeader("달성 완료 항목", successGoals.length, Colors.brown),
+                  ...successGoals.reversed.map((g) => _buildSuccessCard(g)).toList(),
+                ],
+                if (failedGoals.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  _buildSectionHeader("실패한 목표", failedGoals.length, Colors.redAccent),
+                  ...failedGoals.reversed.map((g) => _buildFailedCard(g)).toList(),
+                ],
                 const SizedBox(height: 40),
               ]),
             ),
@@ -129,31 +176,31 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  Widget _buildSummaryStats() {
+  Widget _buildSummaryStats({required int growing, required int success, required int failed}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.blueAccent,
+        color: Colors.brown,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.blueAccent.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 8))],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _statColumn("완료한 목표", "${db.completedFarm.length}"),
-          Container(width: 1, height: 40, color: Colors.white24),
-          _statColumn("진행 중인 목표", "${db.activeGoals.length}"),
+          _statColumn("진행 중", "$growing", Colors.white),
+          _statColumn("성공", "$success", Colors.lightGreenAccent),
+          _statColumn("실패", "$failed", Colors.red[200]!),
         ],
       ),
     );
   }
 
-  Widget _statColumn(String label, String value) {
+  Widget _statColumn(String label, String value, Color valueColor) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(value, style: TextStyle(color: valueColor, fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -175,7 +222,11 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  Widget _buildGoalItem(Goal goal, bool isDone) {
+  // 🔥 [삭제] _buildGoalItem 함수는 아래 3개의 함수로 분리되었습니다.
+  // Widget _buildGoalItem(Goal_v2 goal, bool isDone, {bool isFailed = false}) { ... }
+
+  // 🔥 [신규] 진행 중인 목표 카드
+  Widget _buildGrowingCard(Goal goal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -190,7 +241,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
             width: 52, height: 52,
             decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
             alignment: Alignment.center,
-            child: Text(isDone ? "✅" : goal.emoji, style: const TextStyle(fontSize: 28)),
+            child: Text(goal.emoji2, style: const TextStyle(fontSize: 28)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -199,25 +250,87 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
               children: [
                 Text(goal.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                 const SizedBox(height: 4),
-                Text(
-                  isDone ? "목표를 성공적으로 달성했습니다." : "현재 달성률 ${(goal.progress * 100).toInt()}%",
-                  style: const TextStyle(color: Colors.black45, fontSize: 13),
-                ),
+                Text("현재 달성률 ${(goal.progress * 100).toInt()}%", style: const TextStyle(color: Colors.black45, fontSize: 13)),
               ],
             ),
           ),
-          if (isDone)
-            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 28)
-          else
-            SizedBox(
-              width: 36, height: 36,
-              child: CircularProgressIndicator(
-                value: goal.progress,
-                strokeWidth: 4,
-                backgroundColor: Colors.grey.shade100,
-                color: Colors.blueAccent,
-              ),
+          SizedBox(
+            width: 36, height: 36,
+            child: CircularProgressIndicator(
+              value: goal.progress,
+              strokeWidth: 4,
+              backgroundColor: Colors.grey.shade100,
+              color: Colors.green,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔥 [신규] 성공한 목표 카드
+  Widget _buildSuccessCard(Goal goal) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52, height: 52,
+            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
+            alignment: Alignment.center,
+            child: const Text("🏵️", style: TextStyle(fontSize: 28)),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("목표 달성!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                SizedBox(height: 4),
+                Text("성공적으로 완수했습니다.", style: TextStyle(color: Colors.black45, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // 🔥 [신규] 실패한 목표 카드
+  Widget _buildFailedCard(Goal goal) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52, height: 52,
+            decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(14)),
+            alignment: Alignment.center,
+            child: const Text("🥀", style: TextStyle(fontSize: 28)),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("기간 만료", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                SizedBox(height: 4),
+                Text("도전 기간이 만료되었습니다.", style: TextStyle(color: Colors.black45, fontSize: 13)),
+              ],
+            ),
+          ),
         ],
       ),
     );

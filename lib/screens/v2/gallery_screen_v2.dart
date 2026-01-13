@@ -93,7 +93,7 @@ class _GalleryScreenV2State extends State<GalleryScreenV2> {
         children: [
           Row(
             children: [
-              Text(goal.emoji, style: const TextStyle(fontSize: 24)),
+              Text(goal.emoji2, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

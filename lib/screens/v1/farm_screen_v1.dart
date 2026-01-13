@@ -70,12 +70,13 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
         content: TextField(
           controller: controller,
           style: const TextStyle(color: Colors.white),
-          cursorColor: Colors.amber,
+          cursorColor: Colors.brown,
           decoration: const InputDecoration(
-            hintText: "새로운 이름",
+            hintText: "이름을 입력하세요",
+            filled: true,
             hintStyle: TextStyle(color: Colors.grey),
             enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.brown)),
           ),
         ),
         actions: [
@@ -87,7 +88,7 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                 Navigator.pop(context);
               }
             },
-            child: const Text("확인", style: TextStyle(color: Colors.amber)),
+            child: const Text("확인", style: TextStyle(color: Colors.brown)),
           ),
         ],
       ),

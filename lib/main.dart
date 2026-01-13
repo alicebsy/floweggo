@@ -83,7 +83,7 @@ class _MainNavigationState extends State<MainNavigation> {
           // 테마 전환용 플로팅 버튼
           floatingActionButton: FloatingActionButton.small(
             onPressed: () => isModernTheme.value = !isModernTheme.value,
-            backgroundColor: isModern ? const Color(0xFFD35400) : Colors.brown,
+            backgroundColor: isModern ? Colors.brown : Colors.brown,
             child: Icon(
                 isModern ? Icons.history : Icons.history,
                 color: Colors.white
@@ -97,15 +97,30 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  // Version 2: Material 3 스타일의 깔끔한 내비게이션 바
-  Widget _buildModernNav() => NavigationBar(
-    selectedIndex: _index,
-    onDestinationSelected: (i) => setState(() => _index = i),
-    destinations: const [
-      NavigationDestination(icon: Icon(Icons.auto_awesome_motion_rounded), label: "기록이닭"),
-      NavigationDestination(icon: Icon(Icons.egg_rounded), label: "부화장이닭"),
-      NavigationDestination(icon: Icon(Icons.grid_view_rounded), label: "농장이닭"),
-    ],
+  // Version 2
+  Widget _buildModernNav() => Container(
+    height: 85,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.transparent,
+          Colors.transparent, // 🔥 이 부분을 투명으로 수정
+        ],
+      ),
+    ),
+    child: SafeArea(
+      top: false,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildV2NavItem(0, Icons.photo_library_outlined, Icons.photo_library, "성장기록"),
+          _buildV2NavItem(1, Icons.eco_outlined, Icons.eco, "텃밭", isMain: true),
+          _buildV2NavItem(2, Icons.house_siding_outlined, Icons.house_siding, "나의 농장"),
+        ],
+      ),
+    ),
   );
 
   // Version 1: 커스텀 그라데이션이 적용된 클래식 내비게이션 바
@@ -155,6 +170,37 @@ class _MainNavigationState extends State<MainNavigation> {
           const SizedBox(height: 4),
           Text(
             label,
+            style: TextStyle(
+              color: isSelected ? activeColor : inactiveColor,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildV2NavItem(int index, IconData icon, IconData activeIcon, String label, {bool isMain = false}) {
+    bool isSelected = _index == index;
+    const Color activeColor = Color(0XFFC0D583);
+    const Color inactiveColor = Colors.grey;
+
+    return GestureDetector(
+      onTap: () => setState(() => _index = index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isSelected ? activeIcon : icon,
+            color: isSelected ? activeColor : inactiveColor,
+            size: isMain ? 32 : 26,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label, 
             style: TextStyle(
               color: isSelected ? activeColor : inactiveColor,
               fontSize: 11,
