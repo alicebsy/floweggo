@@ -245,11 +245,25 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                       const SizedBox(height: 30),
                     ],
 
-                    // 3. Failed (멘트 수정 적용)
+                    // 3. Failed (멘트 수정 및 UI 통일)
                     if (failedGoals.isNotEmpty) ...[
                       _buildSectionTitle("🍳 계란후라이가 되었닭..."), // 멘트 수정
                       const SizedBox(height: 15),
-                      ...failedGoals.map((g) => _buildFailedCard(g)).toList(),
+                      GridView.builder(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true, // 스크롤 충돌 방지
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,       // 2열 배치 (성공 섹션과 동일)
+                          childAspectRatio: 2.2,   // 가로세로 비율 (성공 섹션과 동일)
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemCount: failedGoals.length,
+                        itemBuilder: (context, index) => _buildFailedCard(failedGoals[index]),
+                      ),
+                      // 맨 아래 여백이 필요하면 추가
+                      const SizedBox(height: 30),
                     ],
 
                     // 4. 텅 비었을 때
