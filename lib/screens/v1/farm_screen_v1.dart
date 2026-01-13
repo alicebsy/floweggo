@@ -129,7 +129,7 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
               children: [
                 // 배경
                 Container(
-                  height: 280, // 🔥 높이 유지
+                  height: 250, // 🔥 높이 유지
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     image: DecorationImage(
@@ -180,7 +180,7 @@ class _FarmScreenV1State extends State<FarmScreenV1> {
                         const SizedBox(height: 5),
                         const Text("오늘도 부지런히 꿈을 키워요", style: TextStyle(color: Colors.white60, fontSize: 13)),
 
-                        const SizedBox(height: 20), // 간격 약간 조정
+                        const SizedBox(height: 30), // 간격 약간 조정
 
                         // 📊 통계
                         Row(
