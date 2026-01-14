@@ -3,7 +3,7 @@
 > "당신의 꾸준함이 알을 깨웁니다! 목표를 달성하고 나만의 닭을 키워보세요."
 
 ## 📖 프로젝트 소개
-[EGGO]는 단순한 투두 리스트가 아닙니다.  
+[EGGO]는 단순한 투두 리스트가 아닙니다.
 사용자가 설정한 목표를 매일 달성할 때마다 온도가 올라가고, 알에서 병아리, 그리고 닭으로 성장하는 **게이미피케이션 목표 관리 앱**입니다.
 
 
@@ -40,6 +40,11 @@
 ### Development
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=Flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=Dart&logoColor=white)
+
+
+### API
+![ML Kit](https://img.shields.io/badge/ML_Kit-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_Flash_2.5-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)
 
 ---
 
