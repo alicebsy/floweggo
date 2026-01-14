@@ -1,4 +1,6 @@
+import 'dart:io'; // 파일 처리를 위해 필요
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // 갤러리 접근을 위해 필요
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../database/db_helper.dart';
 import '../../models/goal_model.dart';
@@ -12,26 +14,43 @@ class FarmScreenV2 extends StatefulWidget {
 
 class _FarmScreenV2State extends State<FarmScreenV2> {
   final db = DbHelper();
+
+  // ✅ 프로필 상태 변수
   String _userName = "농부";
+  String _userBio = "오늘도 풍년을 기원합니다!";
+  String? _profileImagePath; // 이미지 경로 저장용
+
+  final ImagePicker _picker = ImagePicker(); // 이미지 선택기
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserProfile();
   }
 
-  Future<void> _loadUserName() async {
+  // ✅ 데이터 로드
+  Future<void> _loadUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _userName = prefs.getString('user_name') ?? "농부";
+      _userBio = prefs.getString('user_bio') ?? "오늘도 풍년을 기원합니다!";
+      _profileImagePath = prefs.getString('user_image_path'); // 저장된 이미지 경로 불러오기
     });
   }
 
-  Future<void> _saveUserName(String name) async {
+  // ✅ 데이터 저장
+  Future<void> _saveUserProfile(String name, String bio, String? imagePath) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', name);
+    await prefs.setString('user_bio', bio);
+    if (imagePath != null) {
+      await prefs.setString('user_image_path', imagePath);
+    }
+
     setState(() {
       _userName = name;
+      _userBio = bio;
+      _profileImagePath = imagePath;
     });
   }
 
@@ -66,37 +85,121 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  void _showNameDialog() {
-    final controller = TextEditingController(text: _userName);
+  // ✅ [수정됨] 갤러리 이미지 선택 팝업 (StatefulBuilder 사용)
+  void _showProfileEditDialog() {
+    final nameController = TextEditingController(text: _userName);
+    final bioController = TextEditingController(text: _userBio);
+    String? tempImagePath = _profileImagePath; // 팝업 내 임시 이미지 경로
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text("이름 변경"),
-        content: TextField(
-          controller: controller,
-          cursorColor: Colors.blueAccent,
-          decoration: const InputDecoration(
-            hintText: "이름을 입력하세요",
-            filled: true,
-            fillColor: Color(0xFFF0F4F8),
-            border: InputBorder.none,
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("취소", style: TextStyle(color: Colors.grey))),
-          TextButton(
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                _saveUserName(controller.text);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("확인", style: TextStyle(color: Colors.blueAccent)),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder( // 팝업 내부 상태(이미지 미리보기) 갱신을 위해 사용
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Center(child: Text("프로필 수정", style: TextStyle(fontWeight: FontWeight.bold))),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+                    // 1. 프로필 사진 선택 (터치 시 갤러리 열기)
+                    GestureDetector(
+                      onTap: () async {
+                        final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+                        if (image != null) {
+                          setStateDialog(() {
+                            tempImagePath = image.path; // 미리보기 업데이트
+                          });
+                        }
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 100, height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade200,
+                              border: Border.all(color: Colors.grey.shade300, width: 1),
+                              image: tempImagePath != null
+                                  ? DecorationImage(
+                                image: FileImage(File(tempImagePath!)),
+                                fit: BoxFit.cover,
+                              )
+                                  : null,
+                            ),
+                            child: tempImagePath == null
+                                ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                                : null,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 2. 이름 입력
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: "이름",
+                        filled: true,
+                        fillColor: const Color(0xFFF0F4F8),
+                        border: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(12)
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 3. 한줄 소개 입력
+                    TextField(
+                      controller: bioController,
+                      decoration: InputDecoration(
+                        labelText: "한줄 소개",
+                        filled: true,
+                        fillColor: const Color(0xFFF0F4F8),
+                        border: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(12)
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("취소", style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _saveUserProfile(
+                        nameController.text,
+                        bioController.text,
+                        tempImagePath
+                    );
+                    Navigator.pop(context);
+                  },
+                  child: const Text("완료", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -108,14 +211,14 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     final successGoals = allGoals.where((goal) => goal.temperature >= 100).toList();
     final growingGoals = allGoals.where((goal) {
       if (goal.temperature >= 100) return false;
-      DateTime start; 
+      DateTime start;
       try { start = DateTime.parse(goal.id); } catch(e) { start = DateTime.now(); }
       DateTime end = start.add(Duration(days: goal.period));
       return now.isBefore(end) || now.isAtSameMomentAs(end);
     }).toList();
     final failedGoals = allGoals.where((goal) {
       if (goal.temperature >= 100) return false;
-      DateTime start; 
+      DateTime start;
       try { start = DateTime.parse(goal.id); } catch(e) { start = DateTime.now(); }
       DateTime end = start.add(Duration(days: goal.period));
       return now.isAfter(end);
@@ -134,31 +237,59 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
               padding: const EdgeInsets.only(top: 60, bottom: 30),
               child:Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade200, width: 2),
-                      color: Colors.white,
-                    ),
-                    child: const Text("👨🏻‍🌾", style: TextStyle(fontSize: 40)),
-                  ),
-                  const SizedBox(height: 12),
+                  // ✅ [수정됨] 프로필 상단 영역 (사진 선택, 회색 연필, 화살표 제거)
                   GestureDetector(
-                    onTap: _showNameDialog,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    onTap: _showProfileEditDialog, // 전체 영역 터치 시 수정 팝업
+                    child: Column(
                       children: [
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            Container(
+                              width: 80, height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey.shade200,
+                                border: Border.all(color: Colors.grey.shade200, width: 1),
+                                image: _profileImagePath != null
+                                    ? DecorationImage(
+                                  image: FileImage(File(_profileImagePath!)),
+                                  fit: BoxFit.cover,
+                                )
+                                    : null,
+                              ),
+                              child: _profileImagePath == null
+                                  ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                                  : null,
+                            ),
+                            // ✅ 회색 연필 아이콘
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade400, // 파란색 -> 회색 변경
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              child: const Icon(Icons.edit, size: 12, color: Colors.white),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // ✅ 이름 (옆에 화살표 삭제됨)
                         Text(
-                          "$_userName",
+                          _userName,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.black87),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.edit_outlined, size: 20, color: Colors.black38),
+                        const SizedBox(height: 6),
+                        Text(
+                          _userBio.isEmpty ? "한줄 소개를 입력하세요" : _userBio,
+                          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                        ),
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -176,10 +307,10 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
           if (isFarmEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _buildEmptyUI(), // 중앙 정렬된 빈 화면 UI
+              child: _buildEmptyUI(),
             )
           else...[
-            // 🌱 진행 중인 목표 (SliverList)
+            // 🌱 진행 중인 목표
             if (growingGoals.isNotEmpty) ...[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
@@ -196,7 +327,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
               ),
             ],
 
-            // 🌹 성공한 목표 (SliverGrid - v1 방식)
+            // 🌹 성공한 목표
             if (successGoals.isNotEmpty) ...[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
@@ -219,7 +350,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
               ),
             ],
 
-            // 🥀 실패한 목표 (SliverGrid - v1 방식)
+            // 🥀 실패한 목표
             if (failedGoals.isNotEmpty) ...[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
@@ -301,10 +432,6 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  // 🔥 [삭제] _buildGoalItem 함수는 아래 3개의 함수로 분리되었습니다.
-  // Widget _buildGoalItem(Goal_v2 goal, bool isDone, {bool isFailed = false}) { ... }
-
-  // 🔥 [신규] 진행 중인 목표 카드
   Widget _buildGrowingCard(Goal goal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -361,7 +488,6 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  // 🔥 [신규] 성공한 목표 카드
   Widget _buildSuccessCard(Goal goal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -394,7 +520,6 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
     );
   }
 
-  // 🔥 [신규] 실패한 목표 카드
   Widget _buildFailedCard(Goal goal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -409,15 +534,15 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
           const Text("🥀", style: TextStyle(fontSize: 25)),
           const SizedBox(width: 15),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(goal.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)
-                ),
-                const Text("실패...", style: TextStyle(fontSize: 11, color: Colors.redAccent)),
-              ]
-            )
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(goal.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)
+                    ),
+                    const Text("실패...", style: TextStyle(fontSize: 11, color: Colors.redAccent)),
+                  ]
+              )
           ),
           GestureDetector(
             onTap: () => _deleteGoal(goal.id),
@@ -429,7 +554,7 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
   }
 
   Widget _buildEmptyUI() {
-    return Center( // SliverFillRemaining 내부에서 정중앙에 배치됨
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

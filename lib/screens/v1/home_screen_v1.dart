@@ -669,25 +669,120 @@ class _HomeScreenV1State extends State<HomeScreenV1> {
 
   Widget _buildEmptyUI() {
     return Center(
-      child: _buildGlassCard(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("🛖", style: TextStyle(fontSize: 80)),
-            const SizedBox(height: 20),
-            const Text("둥지가 텅 비었닭!", style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            const Text("새로운 알을 입양해서\n따뜻하게 품어주세요.", textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.white70)),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white, foregroundColor: Colors.brown,
-                shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+      child: Padding(
+        // 🔥 [핵심 변경] 기존 25 -> 45로 변경!
+        // Active 카드는 PageView 안이라 작게 보이지만, 이건 혼자라 커 보이므로 여백을 더 줘서 폭을 맞춥니다.
+        padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 10),
+        child: _buildGlassCard(
+          padding: 20,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch, // 내부 요소 가로 꽉 채우기
+            children: [
+              // ============================================================
+              // 1. [상단 헤더 공간] (투명하게 처리)
+              // ============================================================
+              Opacity(
+                opacity: 0.0,
+                child: IgnorePointer(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(padding: const EdgeInsets.all(8), child: const Icon(Icons.calendar_today, size: 18)),
+                      const SizedBox(height: 24),
+                      Container(padding: const EdgeInsets.all(8), child: const Icon(Icons.more_horiz, size: 18)),
+                    ],
+                  ),
+                ),
               ),
-              onPressed: _showAddGoalDialog,
-              child: const Text("+ 새로운 알 입양하기", style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+
+              // 날짜 공간 제외 (텍스트 높이 보정)
+              const SizedBox(height: 15),
+
+              // ============================================================
+              // 2. [이모지]
+              // ============================================================
+              Container(
+                height: 155,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Colors.white.withOpacity(0.3), Colors.transparent],
+                  ),
+                ),
+                child: const Text("🛖", style: TextStyle(fontSize: 90)),
+              ),
+
+              const SizedBox(height: 15),
+
+              // ============================================================
+              // 3. [텍스트] (2줄 유지)
+              // ============================================================
+              const Text(
+                "둥지가 텅 비었닭!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                "새로운 알을 입양해서\n따뜻하게 품어주세요.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.white70),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ============================================================
+              // 4. [중간 게이지바 공간] (투명하게 처리)
+              // ============================================================
+              Opacity(
+                opacity: 0.0,
+                child: Column(
+                  children: [
+                    const Row(
+                      children: [Text("Temp", style: TextStyle(fontSize: 13))],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(height: 20),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 13),
+
+              // ============================================================
+              // 5. [버튼]
+              // ============================================================
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _showAddGoalDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.brown,
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_circle_outline, color: Colors.brown),
+                      SizedBox(width: 8),
+                      Text(
+                        "새로운 알 입양하기",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

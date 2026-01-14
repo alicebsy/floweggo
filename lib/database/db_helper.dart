@@ -4,7 +4,7 @@ class DbHelper {
   static final DbHelper _instance = DbHelper._internal();
   factory DbHelper() => _instance;
 
-  // 🔥 [수정 1] 생성자에서 "날짜 지난 닭" 확인 로직 실행
+  // 생성자에서 "날짜 지난 닭" 확인 로직 실행
   DbHelper._internal() {
     _checkExpiredChickens();
   }
@@ -21,7 +21,7 @@ class DbHelper {
     completedFarm.removeWhere((g) => g.id == id);
   }
 
-  // 🔥 [수정 2] 하루 1회 제한 + 닭이 되어도 바로 삭제 안 함
+  // 하루 1회 제한 + 닭이 되어도 바로 삭제 안 함
   void recordProgress(int index, String path, String description) {
     if (index >= activeGoals.length) return;
     final goal = activeGoals[index];
@@ -30,7 +30,7 @@ class DbHelper {
     DateTime now = DateTime.now();
     String todayStr = "${now.year}-${now.month}-${now.day}";
 
-    // ✅ 하루 1회 인증 제한 로직
+    // 하루 1회 인증 제한 로직
     if (goal.memories.isNotEmpty) {
       String lastDate = goal.memories.last['date'];
       if (lastDate == todayStr) {
@@ -53,7 +53,7 @@ class DbHelper {
       }
     ];
 
-    // ✅ 100도가 넘어도 바로 삭제하지 않습니다!
+    // 100도가 넘어도 바로 삭제x
     // 상태만 닭으로 바뀌고(Goal 모델 내부 로직), 홈 화면에는 그대로 남아있게 됨.
     if (goal.temperature >= 100) {
       // 필요하다면 여기서 축하 메시지 트리거 등을 처리
@@ -61,7 +61,7 @@ class DbHelper {
     }
   }
 
-  // 🔥 [신규 추가] 앱 켤 때 실행: 어제 완성된 닭을 졸업시키는 함수
+  // 앱 켤 때 실행: 어제 완성된 닭을 졸업시키는 함수
   void _checkExpiredChickens() {
     DateTime now = DateTime.now();
     String todayStr = "${now.year}-${now.month}-${now.day}";

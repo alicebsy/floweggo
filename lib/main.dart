@@ -141,7 +141,7 @@ class _MainNavigationState extends State<MainNavigation> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildV1NavItem(0, Icons.photo_library_outlined, Icons.photo_library, "성장기록"),
-          _buildV1NavItem(1, Icons.egg_outlined, Icons.egg_rounded, "인큐베이터", isMain: true),
+          _buildV1NavItem(1, Icons.egg_outlined, Icons.egg_rounded, "둥지", isMain: true),
           _buildV1NavItem(2, Icons.agriculture_outlined, Icons.agriculture, "나의 농장"),
         ],
       ),
