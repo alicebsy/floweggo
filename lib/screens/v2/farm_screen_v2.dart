@@ -351,6 +351,11 @@ class _FarmScreenV2State extends State<FarmScreenV2> {
               color: Colors.green,
             ),
           ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text("${(goal.progress * 100).toInt()}% 달성 중", style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.w500,),),
+          ),
         ],
       ),
     );

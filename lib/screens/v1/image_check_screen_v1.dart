@@ -31,7 +31,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   late ImageLabeler _imageLabeler;
 
   // 🔥 [주의] 실제 배포 시에는 API 키를 안전하게 관리해야 합니다.
-  final String _apiKey = '';
+  final String _apiKey = 'AIzaSyA7nt85erpyLb_QGNPoNb9PFeOZ4fKzmoI';
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
   // 🤖 Gemini API 호출 함수 (디버깅 로그 추가됨)
   Future<bool> _isRelatedToGoal(List<String> labels, String goalTitle) async {
     // 1. API 키 확인
-    if (_apiKey != '') {
+    if (_apiKey != 'AIzaSyA7nt85erpyLb_QGNPoNb9PFeOZ4fKzmoI') {
       print("🚨 [ERROR] 예시 API 키가 사용되었습니다. 본인의 키로 교체해주세요!");
       return false;
     }
@@ -64,14 +64,24 @@ class ImageCheckScreenV1State extends State<ImageCheckScreenV1> {
     final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey');
 
     final prompt = '''
-      당신은 사용자의 습관 형성을 돕는 친절한 AI 어시스턴트입니다.
-      사용자가 자신의 목표 달성을 인증하기 위해 사진을 제출했습니다.
+      당신은 사용자의 습관 형성을 검증하는 엄격한 AI 어시스턴트입니다.
+      사용자가 목표 달성을 인증하기 위해 사진을 제출했고, 이미지 분석 결과로 영어 라벨들이 추출되었습니다.
       
-      - 사용자의 한국어 목표: "${goalTitle}"
-      - 사진에서 추출된 영어 라벨: [${labels.join(', ')}]
+      - 사용자의 목표: "${goalTitle}"
+      - 사진에서 추출된 라벨: [${labels.join(', ')}]
       
-      이 라벨들을 바탕으로, 제출된 사진이 사용자의 목표와 간접적으로라도 연관될 가능성이 있는지 판단해주세요.
-      관대하게 판단해주세요.
+      판단 기준:
+      1. 목표 부합성: 추출된 라벨들이 사용자의 목표를 실제로 '실천'하고 있음을 증명하는지 관대하게 판단하세요.
+        - 예: 목표가 "공부"인데 라벨에 'Book' 이나 'Writing' 이나 'Library'가 있다면 "yes".
+        - 예: 목표가 "공부"인데 라벨에 'Video game' 이나 'Television'이 있다면 "no".
+      2. 부정적 사례 차단: 목표와 반대되는 행위는 엄격히 거절하세요.
+         - 목표가 '다이어트', '체중 감량', '식단 조절' 또는 '간강 관리' 인 경우:
+            라벨에 'Food', 'Dish', 'Cuisine' 등이 포함되어 있더라도, 'Coke', 'Ice cream', 'Fast food', 'Dessert', 'Cake', 'Pizza' 등의 고칼로리 음식이나 패스트푸드와 관련된 라벨이 있다면 반드시 "no"를 반환하세요.
+            단순 'Food' 나 'Dish' 만 존재한다면, "yes"라고 답하세요.
+      4. 목표와 상충되는 라벨이 하나라도 포함되어 있다면 "no"라고 답하세요.
+      5. 확신이 없거나 모호한 경우, 사용자가 직접 설명할 수 있도록 "no"를 선택하세요.
+      6. 라벨이 'Musical instrument' 일 때는 'laptop'가 동일하게 판단하세요.
+      
       답변은 반드시 "yes" 또는 "no"로만 해주세요.
     ''';
 

@@ -847,7 +847,7 @@ class _HomeScreenV2State extends State<HomeScreenV2> {
                     Icon(Icons.add_rounded, size: 22),
                     SizedBox(width: 8),
                     Text(
-                      "+ 새로운 씨앗 심기",
+                      "새로운 씨앗 심기",
                       style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                   ],
